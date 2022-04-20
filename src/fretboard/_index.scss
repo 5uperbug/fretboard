@@ -1,0 +1,64 @@
+.panel {
+    margin: 0 auto;
+    padding: 5px;
+    border: 1px solid #98b9bc;
+
+    .fretboard {
+        border: 1px solid #aeaeae;
+        border-radius: 5px;
+        margin: 0 auto;
+
+        .string {
+            background: linear-gradient(to bottom, #fffaef 45%, #d6b698 45%, #d6b698 49%, #fffaef 51%);
+
+            .fret {
+                font-size: 20px;
+                position: relative;
+                display: inline-block;
+                text-align: center;
+                vertical-align: middle;
+                width: 70px;
+                height: 35px;
+                line-height: 35px;
+                border-left: 3px solid rgba(50, 50, 50, 0.5);
+                cursor: cell;
+                font-weight: bold;
+
+                &:hover {
+                    background: linear-gradient(to bottom, #ccc 45%, #7f7f7f 47%, #7f7f7f 49%, #ccc 51%);
+                }
+
+                &.fretzero {
+                    background-color: #aaa;
+                    border-left-color: transparent;
+                    width: 35px;
+
+                    &:hover {
+                        background: #ccc;
+                    }
+                }
+
+                .layer-0 {
+                    color: rgba(0, 0, 0, 0.1);
+                }
+            }
+        }
+    }
+
+    .fret-numbers {
+        .fret {
+            font-size: 15px;
+            position: relative;
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            width: 73px;
+            height: 35px;
+            line-height: 35px;
+
+            &.fretzero {
+                width: 38px;
+            }
+        }
+    }
+}
