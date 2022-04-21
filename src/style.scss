@@ -3,11 +3,48 @@
 }
 
 body {
-
-
     .container {
         margin-top: 30px;
         display: flex;
         align-items: center;
+    }
+
+    .button {
+        background-color: transparent;
+        border: 1px #000 solid;
+        color: #000;
+        padding: 10px 15px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: all 0.5s ease;
+
+        &.button-green {
+            background-color: #4CAF50;
+        }
+
+        &.button-blue {
+            background-color: #008CBA;
+        }
+
+        &.button-red {
+            background-color: #f44336;
+        }
+
+        &.button-grey {
+            background-color: #e7e7e7;
+            color: black;
+        }
+
+        &.button-black {
+            background-color: #555555;
+        }
+
+        &:hover {
+            opacity: 1;
+        }
     }
 }

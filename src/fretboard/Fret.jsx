@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getFretName } from "../utils";
 
 const Fret = ({ offset, stringName }) => {
     const [selected, setSelected] = useState(true);
@@ -8,19 +9,11 @@ const Fret = ({ offset, stringName }) => {
     };
 
     const renderLayer = () => {
-        if (selected) {
-            return (
-                <div className="layer-0">
-                    {offset === 0 ? stringName : offset}
-                </div>
-            );
-        } else {
-            return (
-                <div className="layer-1">
-                    {offset === 0 ? stringName : offset}
-                </div>
-            );
-        }
+        return (
+            <div className={`layer-${selected ? '0' : '1'}`}>
+                {getFretName(stringName, offset)}
+            </div>
+        );
     }
 
     return (
