@@ -1,10 +1,12 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import String from "./String";
 import html2canvas from 'html2canvas';
 
+import Switch from "../components/switch";
 import './_index.scss';
 
 const Fretboard = () => {
+    const [showNoteNames, setShowNoteNames] = useState(false);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
     const noOfFrets = 15;
     const fretboardContainer = useRef();
@@ -75,6 +77,11 @@ const Fretboard = () => {
         });
     }
 
+    const handleShowNoteNamesChange = (checked) => {
+        debugger
+        setShowNoteNames(checked);
+    }
+
     return (
         <div className="block">
             <div className="control-panel">
@@ -84,6 +91,12 @@ const Fretboard = () => {
                 <button className="button" onClick={handleDownload}>
                     Download
                 </button>
+
+
+                <div className="d-inline-block">
+                    <Switch checked={showNoteNames} onChange={handleShowNoteNamesChange} />
+                </div>
+
             </div>
             <div ref={fretboardContainer}>
                 <div className="fretboard">
