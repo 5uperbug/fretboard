@@ -8,6 +8,7 @@ import './_index.scss';
 const Fretboard = () => {
     const [showNoteNames, setShowNoteNames] = useState(true);
     const [showNoteLabels, setShowNoteLabels] = useState(false);
+    const [stateBustingKey, setStateBustingKey] = useState(0);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
     const noOfFrets = 15;
     const fretboardContainer = useRef();
@@ -23,9 +24,9 @@ const Fretboard = () => {
     const renderStrings = () => {
         return strings.map((string, idx) => (
             <String
+                key={`${idx}${stateBustingKey}`}
                 name={string}
                 index={idx}
-                key={idx}
                 noOfFrets={noOfFrets}
                 properties={getFretboardProps()}
             />
@@ -87,6 +88,12 @@ const Fretboard = () => {
         });
     }
 
+    const handleClear = () => {
+        if (window.confirm('Do you want to clear this fretboard?')) {
+            setStateBustingKey(stateBustingKey + 1);
+        }
+    }
+
     const handleShowNoteNamesChange = (checked) => {
         setShowNoteNames(checked);
     }
@@ -112,6 +119,9 @@ const Fretboard = () => {
                     <label>Show note labels&nbsp;</label>
                     <Switch checked={showNoteLabels} onChange={handleShowNoteLabelsChange} />
                 </div>
+                <button className="button" onClick={handleClear}>
+                    Clear Fretboard
+                </button>
             </div>
             <div ref={fretboardContainer}>
                 <div className="fretboard">
