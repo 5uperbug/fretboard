@@ -1,19 +1,28 @@
 import React, { useState } from "react";
 import { getFretName } from "../utils";
 
-const Fret = ({ offset, stringName }) => {
-    const [selected, setSelected] = useState(true);
+const Fret = ({ offset, stringName, properties }) => {
+    const [selected, setSelected] = useState(false);
+    const { showNoteNames, showNoteLabels } = properties;
 
     const handleClick = () => {
         setSelected(!selected);
     };
 
     const renderLayer = () => {
-        return (
-            <div className={`layer-${selected ? '0' : '1'}`}>
-                {getFretName(stringName, offset)}
-            </div>
-        );
+        if (selected) {
+            return (
+                <div className="layer-1">
+                    {showNoteNames ? getFretName(stringName, offset) : ''}
+                </div>
+            );
+        } else {
+            return (
+                <div className="layer-0">
+                    {showNoteLabels ? getFretName(stringName, offset) : ''}
+                </div>
+            );
+        }
     }
 
     return (

@@ -4,7 +4,7 @@ import "./_index.scss";
 
 const Switch = ({ name, checked, onChange, disabled }) => {
     return (
-        <div className="switch switch-small">
+        <div className="switch switch-small" onClick={e => onChange(!checked)}>
             <input
                 type="checkbox"
                 className="switch-checkbox"

@@ -6,10 +6,19 @@ import Switch from "../components/switch";
 import './_index.scss';
 
 const Fretboard = () => {
-    const [showNoteNames, setShowNoteNames] = useState(false);
+    const [showNoteNames, setShowNoteNames] = useState(true);
+    const [showNoteLabels, setShowNoteLabels] = useState(false);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
     const noOfFrets = 15;
     const fretboardContainer = useRef();
+
+
+    const getFretboardProps = () => {
+        return {
+            showNoteNames,
+            showNoteLabels
+        };
+    }
 
     const renderStrings = () => {
         return strings.map((string, idx) => (
@@ -18,6 +27,7 @@ const Fretboard = () => {
                 index={idx}
                 key={idx}
                 noOfFrets={noOfFrets}
+                properties={getFretboardProps()}
             />
         ));
     };
@@ -78,8 +88,11 @@ const Fretboard = () => {
     }
 
     const handleShowNoteNamesChange = (checked) => {
-        debugger
         setShowNoteNames(checked);
+    }
+
+    const handleShowNoteLabelsChange = (checked) => {
+        setShowNoteLabels(checked);
     }
 
     return (
@@ -91,12 +104,14 @@ const Fretboard = () => {
                 <button className="button" onClick={handleDownload}>
                     Download
                 </button>
-
-
-                <div className="d-inline-block">
+                <div className="switch-group">
+                    <label>Show note names&nbsp;</label>
                     <Switch checked={showNoteNames} onChange={handleShowNoteNamesChange} />
                 </div>
-
+                <div className="switch-group">
+                    <label>Show note labels&nbsp;</label>
+                    <Switch checked={showNoteLabels} onChange={handleShowNoteLabelsChange} />
+                </div>
             </div>
             <div ref={fretboardContainer}>
                 <div className="fretboard">
