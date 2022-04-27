@@ -1,4 +1,4 @@
-const noteNames = ['A', 'A#', 'B', 'C', 'C#', 'D', 'E', 'F', 'F#', 'G', 'G#'];
+const noteNames = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 
 
 export const getFretName = (stringName, offset = 0) => {
@@ -7,5 +7,5 @@ export const getFretName = (stringName, offset = 0) => {
     }
 
     const idx = noteNames.indexOf(stringName);
-    return noteNames[(idx + offset) % 11];
+    return noteNames[(idx + offset) % 12];
 }

@@ -4,10 +4,15 @@ import { getFretName } from "../utils";
 const Fret = ({ offset, stringName, properties }) => {
     const [selected, setSelected] = useState(false);
     const { showNoteNames, showNoteLabels } = properties;
+    let clickTimeout
 
     const handleClick = () => {
         setSelected(!selected);
     };
+
+    const handleDoubleClick = () => {
+        console.log('double click');
+    }
 
     const renderLayer = () => {
         if (selected) {
@@ -28,6 +33,7 @@ const Fret = ({ offset, stringName, properties }) => {
     return (
         <div
             onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
             className={`fret ${offset === 0 ? 'fretzero' : ''}`}
         >
             {renderLayer()}

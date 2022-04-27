@@ -4,6 +4,8 @@
     border: 1px solid #98b9bc;
 
     .control-panel {
+        min-width: 800px;
+
         .button {
             margin: 0 5px 5px 0;
         }
@@ -16,92 +18,119 @@
             display: inline-block;
             margin: 0 5px 5px 0;
         }
-    }
 
-    .fretboard {
-        border: 1px solid #aeaeae;
-        border-radius: 5px;
-        margin: 0 auto;
+        .slider-group {
+            display: inline-block;
+            margin: 0 5px 5px 0;
 
-        .string {
-            background: linear-gradient(to bottom, #fffaef 45%, #d6b698 45%, #d6b698 49%, #fffaef 51%);
+            label {
+                vertical-align: text-top;
+            }
 
-            .fret {
-                font-size: 18px;
-                position: relative;
-                display: inline-block;
-                text-align: center;
-                vertical-align: middle;
+            input[type="range"] {
                 width: 70px;
-                height: 35px;
-                line-height: 35px;
-                border-left: 3px solid rgba(50, 50, 50, 0.5);
-                cursor: cell;
-                font-weight: bold;
-
-                &:hover {
-                    background: linear-gradient(to bottom, #ccc 45%, #7f7f7f 47%, #7f7f7f 49%, #ccc 51%);
-                }
-
-                &.fretzero {
-                    background-color: #aaa;
-                    border-left-color: transparent;
-                    width: 35px;
-
-                    &:hover {
-                        background: #ccc;
-                    }
-
-                    [class^="layer-"] {
-                        width: 35px;
-                    }
-
-                    .layer-1 {
-                        width: 26px;
-                        left: 3px;
-                    }
-                }
-
-                .layer-0 {
-                    position: absolute;
-                    display: block;
-                    width: 70px;
-                    height: 35px;
-                    top: 0;
-                    left: 0;
-                    color: rgba(0, 0, 0, 0.1);
-                }
-
-                .layer-1 {
-                    position: absolute;
-                    display: block;
-                    width: 26px;
-                    height: 26px;
-                    line-height: 26px;
-                    border-radius: 50%;
-                    top: 5px;
-                    left: 23px;
-                    color: #fff;
-                    background: red;
-                }
+                margin: 0;
             }
         }
     }
 
-    .fret-numbers {
-        .fret {
-            color: #818181;
-            font-size: 15px;
-            position: relative;
-            display: inline-block;
-            text-align: center;
-            vertical-align: middle;
-            width: 73px;
-            height: 35px;
-            line-height: 35px;
+    .fretboard-container {
+        min-width: 0;
+        max-width: 1200px;
+        white-space: nowrap;
+        overflow: scroll;
 
-            &.fretzero {
-                width: 38px;
+        .fretboard {
+            border: 1px solid #aeaeae;
+            border-radius: 5px;
+            margin: 0 auto;
+
+            .string {
+                background-image: linear-gradient(to bottom, #fffaef 45%, #d6b698 45%, #d6b698 49%, #fffaef 51%);
+                background-repeat: repeat-y;
+                -moz-user-select: none;
+                -khtml-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+
+                .fret {
+                    font-size: 18px;
+                    position: relative;
+                    display: inline-block;
+                    text-align: center;
+                    vertical-align: middle;
+                    width: 70px;
+                    height: 35px;
+                    line-height: 35px;
+                    border-left: 3px solid rgba(50, 50, 50, 0.5);
+                    cursor: cell;
+                    font-weight: bold;
+
+                    &:hover {
+                        background: linear-gradient(to bottom, #ccc 45%, #7f7f7f 47%, #7f7f7f 49%, #ccc 51%);
+                    }
+
+                    &.fretzero {
+                        background-color: #aaa;
+                        border-left-color: transparent;
+                        width: 35px;
+
+                        &:hover {
+                            background: #ccc;
+                        }
+
+                        [class^="layer-"] {
+                            width: 35px;
+                        }
+
+                        .layer-1 {
+                            width: 26px;
+                            left: 3px;
+                        }
+                    }
+
+                    .layer-0 {
+                        position: absolute;
+                        display: block;
+                        width: 70px;
+                        height: 35px;
+                        top: 0;
+                        left: 0;
+                        color: rgba(0, 0, 0, 0.1);
+                    }
+
+                    .layer-1 {
+                        position: absolute;
+                        display: block;
+                        width: 26px;
+                        height: 26px;
+                        line-height: 26px;
+                        border-radius: 50%;
+                        top: 5px;
+                        left: 23px;
+                        color: #fff;
+                        background: red;
+                    }
+                }
+            }
+        }
+
+        .fret-numbers {
+            .fret {
+                color: #818181;
+                font-size: 15px;
+                position: relative;
+                display: inline-block;
+                text-align: center;
+                vertical-align: middle;
+                width: 73px;
+                height: 35px;
+                line-height: 35px;
+
+                &.fretzero {
+                    width: 38px;
+                }
             }
         }
     }

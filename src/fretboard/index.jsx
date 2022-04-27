@@ -9,8 +9,8 @@ const Fretboard = () => {
     const [showNoteNames, setShowNoteNames] = useState(true);
     const [showNoteLabels, setShowNoteLabels] = useState(false);
     const [stateBustingKey, setStateBustingKey] = useState(0);
+    const [lastFret, setLastFret] = useState(15);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
-    const noOfFrets = 15;
     const fretboardContainer = useRef();
 
 
@@ -27,7 +27,7 @@ const Fretboard = () => {
                 key={`${idx}${stateBustingKey}`}
                 name={string}
                 index={idx}
-                noOfFrets={noOfFrets}
+                noOfFrets={lastFret}
                 properties={getFretboardProps()}
             />
         ));
@@ -36,7 +36,7 @@ const Fretboard = () => {
     const renderFretNumbers = () => {
         const frets = [];
 
-        for (let i = 0; i <= noOfFrets; i++) {
+        for (let i = 0; i <= lastFret; i++) {
             frets.push(
                 <div
                     key={i}
@@ -122,8 +122,19 @@ const Fretboard = () => {
                 <button className="button" onClick={handleClear}>
                     Clear Fretboard
                 </button>
+                <div className="slider-group">
+                    <label>Last fret&nbsp;</label>
+                    <input
+                        type="range"
+                        value={lastFret}
+                        step={1}
+                        min={5}
+                        max={24}
+                        onChange={e => setLastFret(e.target.value)}
+                    />
+                </div>
             </div>
-            <div ref={fretboardContainer}>
+            <div className="fretboard-container" ref={fretboardContainer}>
                 <div className="fretboard">
                     {renderStrings()}
                 </div>
