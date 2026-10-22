@@ -4,12 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 
 import Fretboard from ".";
 
-// Frets are plain divs with no accessible role, so find them by class.
+// Frets are SVG groups with no accessible role, so find them by class.
 const getFret = (container, stringIndex, fret) =>
     container.querySelectorAll(".fretboard .string")[stringIndex].querySelectorAll(".fret")[fret];
 
 const markedNotes = (container) =>
-    [...container.querySelectorAll(".layer-1")].map((el) => el.textContent);
+    [...container.querySelectorAll(".marker")].map((el) => el.textContent);
 
 describe("Fretboard", () => {
     it("marks a fret on click and unmarks it on a second click", async () => {
@@ -55,7 +55,7 @@ describe("Fretboard", () => {
     it("toggles a switch by clicking its text", async () => {
         const user = userEvent.setup();
         const { container } = render(<Fretboard />);
-        const labels = () => [...container.querySelectorAll(".layer-0")].map((el) => el.textContent);
+        const labels = () => [...container.querySelectorAll(".label")].map((el) => el.textContent);
 
         expect(labels()).not.toContain("E");
 
