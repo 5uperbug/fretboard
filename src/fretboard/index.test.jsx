@@ -171,4 +171,104 @@ describe("Fretboard", () => {
         expect(checkbox).not.toBeChecked();
         expect(markedNotes(container)).toEqual([""]);
     });
+
+    describe("instruments and tunings", () => {
+        const stringNames = (container) =>
+            [...container.querySelectorAll(".string-name")].map((el) => el.textContent);
+
+        it.each([
+            ["bass-4", ["G", "D", "A", "E"], 7],
+            ["bass-5", ["G", "D", "A", "E", "B"], 7],
+            ["guitar-7", ["E", "B", "G", "D", "A", "E", "B"], 7],
+            ["guitar-8", ["E", "B", "G", "D", "A", "E", "B", "F#"], 7],
+        ])("draws %s in standard tuning", async (id, names, dots) => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), id);
+
+            expect(stringNames(container)).toEqual(names);
+            expect(container.querySelectorAll(".string")).toHaveLength(names.length);
+            expect(container.querySelectorAll(".inlays circle")).toHaveLength(dots);
+            expect(screen.getByLabelText("Tuning")).toHaveDisplayValue("Standard");
+            const svg = container.querySelector("svg.fretboard");
+            expect(Number(svg.getAttribute("height"))).toBe(2 + names.length * 35 + 35);
+        });
+
+        it("keeps inlays between strings and centred on the neck", async () => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+            const dotLines = () => [...container.querySelectorAll(".inlays circle")]
+                .map((el) => (Number(el.getAttribute("cy")) - 1) / 35);
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), "bass-4");
+            // Single dots on line 2, the double at 12 on lines 1 and 3.
+            expect(new Set(dotLines())).toEqual(new Set([1, 2, 3]));
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), "guitar-7");
+            expect(new Set(dotLines())).toEqual(new Set([2, 3, 5]));
+            expect(dotLines().every(Number.isInteger)).toBe(true);
+        });
+
+        it("switches to a preset tuning and back", async () => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+
+            await user.selectOptions(screen.getByLabelText("Tuning"), "Drop D");
+            expect(stringNames(container)).toEqual(["E", "B", "G", "D", "A", "D"]);
+            expect(screen.getByRole("button", { name: "String 6, fret 2, E" })).toBeInTheDocument();
+
+            await user.selectOptions(screen.getByLabelText("Tuning"), "Standard");
+            expect(stringNames(container)).toEqual(["E", "B", "G", "D", "A", "E"]);
+        });
+
+        it("retunes single strings into a custom tuning, kept per instrument", async () => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+
+            await user.selectOptions(screen.getByLabelText("String 1 tuning"), "D");
+            await user.selectOptions(screen.getByLabelText("String 6 tuning"), "C");
+            expect(stringNames(container)).toEqual(["D", "B", "G", "D", "A", "C"]);
+            expect(screen.getByLabelText("Tuning")).toHaveDisplayValue("Custom");
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), "bass-4");
+            expect(stringNames(container)).toEqual(["G", "D", "A", "E"]);
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), "guitar-6");
+            expect(stringNames(container)).toEqual(["D", "B", "G", "D", "A", "C"]);
+        });
+
+        it("keeps marks on the same strings, hiding ones the instrument doesn't have", async () => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+            const instrument = screen.getByLabelText("Instrument");
+
+            await user.click(getFret(0, 3));
+            await user.click(getFret(5, 3));
+            expect(markedNotes(container)).toEqual(["G", "G"]);
+
+            await user.selectOptions(instrument, "guitar-7");
+            expect(markedNotes(container)).toEqual(["G", "G"]);
+            await user.click(getFret(6, 3));
+
+            await user.selectOptions(instrument, "bass-4");
+            expect(markedNotes(container)).toEqual(["A#"]);
+
+            await user.selectOptions(instrument, "guitar-7");
+            expect(markedNotes(container)).toEqual(["G", "G", "D"]);
+        });
+
+        it("moves the keyboard focus onto every string of a bigger board", async () => {
+            const user = userEvent.setup();
+            render(<Fretboard />);
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), "guitar-8");
+            getFret(0, 0).focus();
+            await user.keyboard("{ArrowDown>9/}");
+            expect(getFret(7, 0)).toHaveFocus();
+
+            await user.selectOptions(screen.getByLabelText("Instrument"), "bass-4");
+            expect(getFret(3, 0)).toHaveAttribute("tabindex", "0");
+        });
+    });
 });
