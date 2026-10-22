@@ -26,7 +26,7 @@ describe("Fretboard", () => {
     it("keeps marked frets when the fret range shrinks and grows again", async () => {
         const user = userEvent.setup();
         const { container } = render(<Fretboard />);
-        const slider = screen.getByRole("slider");
+        const slider = screen.getByLabelText("Last fret");
 
         await user.click(getFret(container, 0, 3));
         await user.click(getFret(container, 5, 12));
@@ -50,6 +50,32 @@ describe("Fretboard", () => {
 
         expect(confirm).toHaveBeenCalledOnce();
         expect(markedNotes(container)).toEqual([]);
+    });
+
+    it("toggles a switch by clicking its text", async () => {
+        const user = userEvent.setup();
+        const { container } = render(<Fretboard />);
+        const labels = () => [...container.querySelectorAll(".layer-0")].map((el) => el.textContent);
+
+        expect(labels()).not.toContain("E");
+
+        await user.click(screen.getByText("Show note labels"));
+
+        expect(screen.getByLabelText("Show note labels")).toBeChecked();
+        expect(labels()[0]).toBe("E");
+    });
+
+    it("toggles a switch from the keyboard", async () => {
+        const user = userEvent.setup();
+        const { container } = render(<Fretboard />);
+        const checkbox = screen.getByLabelText("Show note names");
+
+        await user.click(getFret(container, 0, 3));
+        checkbox.focus();
+        await user.keyboard(" ");
+
+        expect(checkbox).not.toBeChecked();
+        expect(markedNotes(container)).toEqual([""]);
     });
 
     it("keeps marked frets when clearing is cancelled", async () => {

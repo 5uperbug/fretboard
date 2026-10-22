@@ -121,26 +121,21 @@ const Fretboard = () => {
                 <button className="button" onClick={handleDownload}>
                     Download
                 </button>
-                <div className="switch-group">
-                    <label>Show note names&nbsp;</label>
-                    <Switch checked={showNoteNames} onChange={handleShowNoteNamesChange} />
-                </div>
-                <div className="switch-group">
-                    <label>Show note labels&nbsp;</label>
-                    <Switch checked={showNoteLabels} onChange={handleShowNoteLabelsChange} />
-                </div>
+                <Switch label="Show note names" checked={showNoteNames} onChange={handleShowNoteNamesChange} />
+                <Switch label="Show note labels" checked={showNoteLabels} onChange={handleShowNoteLabelsChange} />
                 <button className="button" onClick={handleClear}>
                     Clear Fretboard
                 </button>
                 <div className="slider-group">
-                    <label>Last fret&nbsp;</label>
+                    <label htmlFor="last-fret">Last fret&nbsp;</label>
                     <input
+                        id="last-fret"
                         type="range"
                         value={lastFret}
                         step={1}
                         min={5}
                         max={24}
-                        onChange={e => setLastFret(e.target.value)}
+                        onChange={e => setLastFret(Number(e.target.value))}
                     />
                 </div>
             </div>

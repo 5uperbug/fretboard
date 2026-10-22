@@ -8,8 +8,18 @@
     -ms-user-select: none;
     text-align: left;
 
+    // Invisible but still focusable, unlike display: none.
     &-checkbox {
-        display: none;
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+    }
+
+    &-checkbox:focus-visible+&-label {
+        outline: 2px solid #008CBA;
+        outline-offset: 2px;
     }
 
     &-label {
