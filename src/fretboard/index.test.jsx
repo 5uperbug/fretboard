@@ -53,23 +53,47 @@ describe("Fretboard", () => {
         expect(getFret(0, 15)).toHaveFocus();
     });
 
-    it("shows the last fret and keeps marks when the range shrinks and grows again", async () => {
+    it("keeps marks when the last fret shrinks and grows again", async () => {
         const user = userEvent.setup();
         const { container } = render(<Fretboard />);
-        const slider = screen.getByLabelText("Last fret");
+        const input = screen.getByLabelText("Last fret");
 
-        expect(container.querySelector("output")).toHaveTextContent("15");
+        expect(input).toHaveValue(15);
 
         await user.click(getFret(0, 3));
         await user.click(getFret(5, 12));
         expect(markedNotes(container)).toEqual(["G", "E"]);
 
-        fireEvent.change(slider, { target: { value: "5" } });
+        await user.clear(input);
+        await user.type(input, "5");
         expect(markedNotes(container)).toEqual(["G"]);
-        expect(container.querySelector("output")).toHaveTextContent("5");
 
-        fireEvent.change(slider, { target: { value: "15" } });
+        await user.clear(input);
+        await user.type(input, "15");
         expect(markedNotes(container)).toEqual(["G", "E"]);
+    });
+
+    it("clamps a typed last fret to the allowed range when it loses focus", async () => {
+        const user = userEvent.setup();
+        const { container } = render(<Fretboard />);
+        const input = screen.getByLabelText("Last fret");
+        const fretCount = () => container.querySelectorAll(".fret-numbers text").length;
+
+        await user.clear(input);
+        await user.type(input, "40");
+        expect(fretCount()).toBe(15);
+        await user.tab();
+        expect(input).toHaveValue(24);
+        expect(fretCount()).toBe(24);
+
+        await user.clear(input);
+        await user.type(input, "2{Enter}");
+        expect(input).toHaveValue(5);
+        expect(fretCount()).toBe(5);
+
+        await user.clear(input);
+        await user.tab();
+        expect(input).toHaveValue(5);
     });
 
     it("draws position dots up to the last fret", () => {

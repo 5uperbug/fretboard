@@ -155,7 +155,12 @@ input {
     }
 }
 
+// The header and the page share a width and side padding so their edges line up.
 @media (max-width: 600px) {
+    .app-header-inner {
+        padding: 12px 8px;
+    }
+
     .container {
         padding: 16px 8px;
     }
