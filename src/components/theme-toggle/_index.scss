@@ -1,0 +1,62 @@
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+    border: 0;
+
+    legend {
+        float: left;
+        margin-right: 8px;
+        padding: 0;
+        color: var(--text-muted);
+    }
+
+    label {
+        position: relative;
+        cursor: pointer;
+    }
+
+    // Invisible but still focusable and reachable with the arrow keys.
+    input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+    }
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--control-border);
+        margin-left: -1px;
+        color: var(--text);
+
+        @media (pointer: coarse) {
+            min-height: 44px;
+        }
+    }
+
+    label:first-of-type span {
+        border-radius: 6px 0 0 6px;
+        margin-left: 0;
+    }
+
+    label:last-of-type span {
+        border-radius: 0 6px 6px 0;
+    }
+
+    input:checked + span {
+        background-color: var(--text);
+        color: var(--bg);
+    }
+
+    input:focus-visible + span {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+    }
+}

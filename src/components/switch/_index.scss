@@ -18,7 +18,7 @@
     }
 
     &-checkbox:focus-visible+&-label {
-        outline: 2px solid #008CBA;
+        outline: 2px solid var(--focus);
         outline-offset: 2px;
     }
 
@@ -55,7 +55,7 @@
             content: "Yes";
             text-transform: uppercase;
             padding-left: 10px;
-            background-color: rgba(33, 217, 48, 0.807);
+            background-color: var(--switch-on);
             color: #fff;
         }
     }
@@ -74,7 +74,7 @@
         content: "No";
         text-transform: uppercase;
         padding-right: 10px;
-        background-color: #bbb;
+        background-color: var(--switch-off);
         color: #fff;
         text-align: right;
     }

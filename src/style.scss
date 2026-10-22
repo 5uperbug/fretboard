@@ -1,58 +1,162 @@
-* {
-    font-family: 'Ubuntu Mono', monospace;
+// Page and board colours. The fretboard's SVG also carries the light colours as
+// attributes, which is what exported images use; these only restyle the screen.
+@mixin light-colors {
+    color-scheme: light;
+    --bg: #fff;
+    --text: #1d1d1f;
+    --text-muted: #5f6368;
+    --panel-border: #98b9bc;
+    --header-border: #e3e3e3;
+    --control-border: #767676;
+    --control-hover: #f2f2f2;
+    --danger: #b42318;
+    --focus: #0072a3;
+    --switch-on: #2e8b3e;
+    --switch-off: #949494;
+
+    --board-fret: #fffaef;
+    --board-fret-hover: #f4e9d2;
+    --board-nut: #aaa;
+    --board-string-name: #333;
+    --board-string: #d6b698;
+    --board-string-hover: #b08a64;
+    --board-wire: #323232;
+    --board-inlay: #dccaa6;
+    --board-outline: #aeaeae;
+    --board-number: #6b6b6b;
+    --board-label: #7a6f5c;
+    --board-marker: #c62828;
 }
 
+@mixin dark-colors {
+    color-scheme: dark;
+    --bg: #16181b;
+    --text: #e8e6e3;
+    --text-muted: #a3a7ac;
+    --panel-border: #3d5457;
+    --header-border: #2c2f33;
+    --control-border: #8b8f94;
+    --control-hover: #24272b;
+    --danger: #ff7b72;
+    --focus: #4fb8e0;
+    --switch-on: #3fb950;
+    --switch-off: #6e7378;
+
+    --board-fret: #2a2420;
+    --board-fret-hover: #3a322b;
+    --board-nut: #5b5b5b;
+    --board-string-name: #e8e6e3;
+    --board-string: #a88a6c;
+    --board-string-hover: #d9c2a8;
+    --board-wire: #c8c8c8;
+    --board-inlay: #5a4c40;
+    --board-outline: #55595e;
+    --board-number: #a3a7ac;
+    --board-label: #a39a8c;
+    --board-marker: #c62828;
+}
+
+:root {
+    @include light-colors;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        @include dark-colors;
+    }
+}
+
+:root[data-theme="dark"] {
+    @include dark-colors;
+}
+
+// Controls use the system font; the board and title keep Ubuntu Mono.
 body {
-    .container {
-        margin-top: 30px;
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+.app-header {
+    border-bottom: 1px solid var(--header-border);
+
+    &-inner {
         display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
         align-items: center;
+        justify-content: space-between;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 12px 16px;
+    }
+}
+
+.app-title {
+    margin: 0;
+    font-family: 'Ubuntu Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 16px;
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 1px solid var(--control-border);
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+        background-color: var(--control-hover);
     }
 
-    .button {
-        background-color: transparent;
-        border: 1px #000 solid;
-        color: #000;
-        padding: 10px 15px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 12px;
-        cursor: pointer;
-        opacity: 0.8;
-        transition: all 0.5s ease;
+    &.button-danger {
+        border-color: var(--danger);
+        color: var(--danger);
+    }
 
-        &.button-green {
-            background-color: #4CAF50;
-        }
+    &.button-small {
+        min-height: 28px;
+        padding: 0 10px;
+    }
 
-        &.button-blue {
-            background-color: #008CBA;
-        }
+    // Comfortable tap targets on touch screens.
+    @media (pointer: coarse) {
+        min-height: 44px;
 
-        &.button-red {
-            background-color: #f44336;
-        }
-
-        &.button-grey {
-            background-color: #e7e7e7;
-            color: black;
-        }
-
-        &.button-black {
-            background-color: #555555;
-        }
-
-        &:hover {
-            opacity: 1;
+        &.button-small {
+            min-height: 44px;
         }
     }
 }
 
-.d-inline {
-    display: inline;
-}
-
-.d-inline-block {
-    display: inline-block;
+@media (max-width: 600px) {
+    .container {
+        padding: 16px 8px;
+    }
 }

@@ -6,12 +6,10 @@ import "@fontsource/ubuntu-mono/400.css";
 import "@fontsource/ubuntu-mono/700.css";
 import "./style.scss";
 
-import Fretboard from "./fretboard";
+import App from "./App";
 
 createRoot(document.querySelector('#root')).render(
     <StrictMode>
-        <div className="container">
-            <Fretboard />
-        </div>
+        <App />
     </StrictMode>
 );

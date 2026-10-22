@@ -1,61 +1,157 @@
 .block {
+    // As wide as the fretboard, but never wider than the page; the board then
+    // shrinks to fit, down to a size that is still easy to read and tap.
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
     padding: 5px;
-    border: 1px solid #98b9bc;
-    // Let the panel shrink below the fretboard's width on narrow screens; the
-    // fretboard then scrolls sideways instead of widening the page.
-    min-width: 0;
+    border: 1px solid var(--panel-border);
 
     .control-panel {
-        .button {
-            margin: 0 5px 5px 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 20px;
+        padding: 4px 2px 8px;
+    }
+
+    .control-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+
+        // Keep the destructive action apart from the others.
+        &-end {
+            margin-left: auto;
         }
+    }
 
-        label {
-            font-size: 12px;
+    .switch-group {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+
+        @media (pointer: coarse) {
+            min-height: 44px;
         }
+    }
 
-        .switch-group {
-            display: inline-block;
-            margin: 0 5px 5px 0;
-            cursor: pointer;
-        }
+    .slider-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
 
-        .slider-group {
-            display: inline-block;
-            margin: 0 5px 5px 0;
+        input[type="range"] {
+            width: 90px;
+            margin: 0;
+            accent-color: var(--focus);
 
-            label {
-                vertical-align: text-top;
+            @media (pointer: coarse) {
+                height: 44px;
             }
+        }
 
-            input[type="range"] {
-                width: 70px;
-                margin: 0;
-            }
+        output {
+            min-width: 2ch;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
         }
     }
 
     .fretboard-container {
-        max-width: 1200px;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+
+        // Fade whichever edge has more frets scrolled out of view.
+        &.more-start {
+            mask-image: linear-gradient(to right, transparent, #000 32px);
+        }
+
+        &.more-end {
+            mask-image: linear-gradient(to left, transparent, #000 32px);
+        }
+
+        &.more-start.more-end {
+            mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+        }
 
         // Colours and sizes are attributes on the SVG elements so exported
-        // images keep them; only interaction styles live here.
+        // images keep them in the light theme. These rules only restyle the
+        // board on screen, following the page's theme.
         .fretboard {
             display: block;
             user-select: none;
+            width: var(--board-width);
+            max-width: 100%;
+            min-width: calc(var(--board-width) * 0.7);
+            height: auto;
+
+            // Fingers need full-size frets; scroll instead of shrinking.
+            @media (pointer: coarse) {
+                min-width: var(--board-width);
+            }
+
+            .board-bg {
+                fill: var(--bg);
+            }
+
+            .board-outline {
+                stroke: var(--board-outline);
+            }
+
+            .fret-bg {
+                fill: var(--board-fret);
+            }
+
+            .fretzero .fret-bg {
+                fill: var(--board-nut);
+            }
+
+            .string-line {
+                stroke: var(--board-string);
+            }
+
+            .string-name {
+                fill: var(--board-string-name);
+            }
+
+            .label {
+                fill: var(--board-label);
+            }
+
+            .marker-dot {
+                fill: var(--board-marker);
+            }
+
+            .inlays circle {
+                fill: var(--board-inlay);
+            }
+
+            .focus-ring {
+                stroke: var(--focus);
+            }
+
+            .fret-wire {
+                fill: var(--board-wire);
+            }
+
+            .fret-numbers text {
+                fill: var(--board-number);
+            }
 
             .fret {
                 cursor: cell;
+                outline: none;
 
                 &:hover {
                     .fret-bg {
-                        fill: #ccc;
+                        fill: var(--board-fret-hover);
                     }
 
                     .string-line {
-                        stroke: #7f7f7f;
+                        stroke: var(--board-string-hover);
                     }
                 }
             }
@@ -63,6 +159,43 @@
             .fret-wires {
                 pointer-events: none;
             }
+        }
+    }
+}
+
+// Short messages float at the bottom of the screen so the board doesn't jump.
+.status {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background-color: var(--text);
+    color: var(--bg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+    &:empty {
+        display: none;
+    }
+
+    &-error {
+        background-color: var(--danger);
+    }
+
+    .button {
+        border-color: currentColor;
+        color: inherit;
+
+        &:hover {
+            background-color: rgba(127, 127, 127, 0.25);
         }
     }
 }
