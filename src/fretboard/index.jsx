@@ -23,6 +23,8 @@ const SINGLE_INLAYS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_INLAYS = [12, 24];
 const STATUS_TIMEOUT = 4000;
 const UNDO_TIMEOUT = 8000;
+const MIN_LAST_FRET = 5;
+const MAX_LAST_FRET = 24;
 
 // Arrow keys move between frets; Home and End jump along the string.
 const KEY_MOVES = {
@@ -75,6 +77,9 @@ const Fretboard = () => {
     // marks survive the fret range shrinking and can be cleared in one update.
     const [selectedFrets, setSelectedFrets] = useState(() => new Set());
     const [lastFret, setLastFret] = useState(15);
+    // What is typed in the Last fret box while it has focus. Numbers in range
+    // apply straight away; anything else is clamped or undone on blur.
+    const [lastFretDraft, setLastFretDraft] = useState(null);
     // The fret that is in the tab order, and whether to draw a focus ring on it.
     const [activeCell, setActiveCell] = useState({ string: 0, fret: 0 });
     const [showFocusRing, setShowFocusRing] = useState(false);
@@ -266,6 +271,26 @@ const Fretboard = () => {
         }, () => showStatus("Couldn't create the image.", { error: true }));
     }
 
+    const handleLastFretChange = (e) => {
+        const text = e.target.value;
+        const value = Number(text);
+        setLastFretDraft(text);
+        if (text !== "" && Number.isInteger(value) && value >= MIN_LAST_FRET && value <= MAX_LAST_FRET) {
+            setLastFret(value);
+        }
+    };
+
+    const commitLastFret = () => {
+        if (lastFretDraft === null) {
+            return;
+        }
+        const value = Math.round(Number(lastFretDraft));
+        if (lastFretDraft !== "" && Number.isFinite(value)) {
+            setLastFret(clamp(value, MIN_LAST_FRET, MAX_LAST_FRET));
+        }
+        setLastFretDraft(null);
+    };
+
     const handleClear = () => {
         const previous = selectedFrets;
         if (previous.size === 0) {
@@ -294,19 +319,20 @@ const Fretboard = () => {
                 <div className="control-group" role="group" aria-label="Display">
                     <Switch label="Names on marks" checked={showNoteNames} onChange={setShowNoteNames} />
                     <Switch label="Show all notes" checked={showNoteLabels} onChange={setShowNoteLabels} />
-                    <div className="slider-group">
+                    <div className="number-group">
                         <label htmlFor="last-fret">Last fret</label>
                         <input
                             id="last-fret"
-                            type="range"
-                            value={lastFret}
+                            type="number"
+                            inputMode="numeric"
+                            value={lastFretDraft ?? lastFret}
                             step={1}
-                            min={5}
-                            max={24}
-                            onChange={e => setLastFret(Number(e.target.value))}
+                            min={MIN_LAST_FRET}
+                            max={MAX_LAST_FRET}
+                            onChange={handleLastFretChange}
+                            onBlur={commitLastFret}
+                            onKeyDown={(e) => e.key === "Enter" && commitLastFret()}
                         />
-                        {/* The slider already announces its value. */}
-                        <output htmlFor="last-fret" aria-hidden="true">{lastFret}</output>
                     </div>
                 </div>
                 <div className="control-group control-group-end">

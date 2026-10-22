@@ -1,10 +1,6 @@
 .block {
-    // As wide as the fretboard, but never wider than the page; the board then
-    // shrinks to fit, down to a size that is still easy to read and tap.
-    width: fit-content;
-    max-width: 100%;
+    // Spans the page container so its edges line up with the header.
     box-sizing: border-box;
-    margin: 0 auto;
     padding: 5px;
     border: 1px solid var(--panel-border);
 
@@ -38,25 +34,26 @@
         }
     }
 
-    .slider-group {
+    .number-group {
         display: inline-flex;
         align-items: center;
         gap: 8px;
 
-        input[type="range"] {
-            width: 90px;
-            margin: 0;
-            accent-color: var(--focus);
+        input[type="number"] {
+            width: 4.5em;
+            min-height: 34px;
+            box-sizing: border-box;
+            padding: 0 6px;
+            border: 1px solid var(--control-border);
+            border-radius: 6px;
+            background-color: transparent;
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
 
             @media (pointer: coarse) {
-                height: 44px;
+                min-height: 44px;
+                font-size: 16px; // stops iOS zooming in on focus
             }
-        }
-
-        output {
-            min-width: 2ch;
-            font-variant-numeric: tabular-nums;
-            font-weight: 600;
         }
     }
 
@@ -83,9 +80,13 @@
         .fretboard {
             display: block;
             user-select: none;
-            width: var(--board-width);
-            max-width: 100%;
+            // Fills the panel, growing up to half again its natural size on
+            // wide screens and shrinking to a size that is still easy to read
+            // and tap on narrow ones.
+            width: 100%;
+            max-width: calc(var(--board-width) * 1.5);
             min-width: calc(var(--board-width) * 0.7);
+            margin: 0 auto;
             height: auto;
 
             // Fingers need full-size frets; scroll instead of shrinking.
