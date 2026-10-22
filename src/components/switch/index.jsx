@@ -1,22 +1,26 @@
 import "./_index.scss";
 
-const Switch = ({ name, checked, onChange, disabled }) => {
+// The whole switch, text included, is one <label> around a real checkbox, so
+// clicking the text toggles it and it works from the keyboard.
+const Switch = ({ label, name, checked, onChange, disabled }) => {
     return (
-        <div className="switch switch-small" onClick={() => onChange(!checked)}>
-            <input
-                type="checkbox"
-                className="switch-checkbox"
-                name={name}
-                id={name}
-                checked={checked}
-                onChange={e => onChange(e.target.checked)}
-                disabled={disabled}
-            />
-            <label className="switch-label" htmlFor={name}>
-                <span className="switch-inner" />
-                <span className="switch-switch" />
-            </label>
-        </div>
+        <label className="switch-group">
+            {label}&nbsp;
+            <span className="switch switch-small">
+                <input
+                    type="checkbox"
+                    className="switch-checkbox"
+                    name={name}
+                    checked={checked}
+                    onChange={e => onChange(e.target.checked)}
+                    disabled={disabled}
+                />
+                <span className="switch-label">
+                    <span className="switch-inner" />
+                    <span className="switch-switch" />
+                </span>
+            </span>
+        </label>
     );
 }
 

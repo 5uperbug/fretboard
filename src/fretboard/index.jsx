@@ -1,6 +1,16 @@
 import { useRef, useState } from "react";
 import GuitarString from "./GuitarString";
-import html2canvas from 'html2canvas';
+import { renderPng } from "./export";
+import {
+    BORDER,
+    FRET_NUMBERS_HEIGHT,
+    FRET_WIDTH,
+    FRET_WIRE_WIDTH,
+    NUT_WIDTH,
+    STRING_SPACING,
+    fretCenterX,
+    fretX,
+} from "./geometry";
 
 import Switch from "../components/switch";
 import './_index.scss';
@@ -15,7 +25,11 @@ const Fretboard = () => {
     const [selectedFrets, setSelectedFrets] = useState(() => new Set());
     const [lastFret, setLastFret] = useState(15);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
-    const fretboardContainer = useRef();
+    const fretboardSvg = useRef();
+
+    const width = 2 * BORDER + NUT_WIDTH + lastFret * FRET_WIDTH;
+    const boardHeight = 2 * BORDER + strings.length * STRING_SPACING;
+    const height = boardHeight + FRET_NUMBERS_HEIGHT;
 
     const toggleFret = (key) => {
         setSelectedFrets((prev) => {
@@ -34,6 +48,7 @@ const Fretboard = () => {
             <GuitarString
                 key={idx}
                 name={string}
+                index={idx}
                 noOfFrets={lastFret}
                 isSelected={(fret) => selectedFrets.has(fretKey(idx, fret))}
                 onToggleFret={(fret) => toggleFret(fretKey(idx, fret))}
@@ -43,58 +58,65 @@ const Fretboard = () => {
         ));
     };
 
-    const renderFretNumbers = () => {
-        const frets = [];
+    const renderFretWires = () => {
+        const wires = [];
 
-        for (let i = 0; i <= lastFret; i++) {
-            frets.push(
-                <div
+        for (let i = 1; i <= lastFret; i++) {
+            wires.push(
+                <rect
                     key={i}
-                    className={`fret ${i === 0 ? 'fretzero' : ''}`}
-                >
-                    {i === 0 ? '' : i}
-                </div>
+                    x={fretX(i)}
+                    y={BORDER}
+                    width={FRET_WIRE_WIDTH}
+                    height={strings.length * STRING_SPACING}
+                    fill="#323232"
+                    fillOpacity={0.5}
+                />
             );
         }
-        return frets;
+        return wires;
+    };
+
+    const renderFretNumbers = () => {
+        const numbers = [];
+
+        for (let i = 1; i <= lastFret; i++) {
+            numbers.push(
+                <text
+                    key={i}
+                    x={fretCenterX(i)}
+                    y={boardHeight + FRET_NUMBERS_HEIGHT / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={15}
+                    fill="#818181"
+                >
+                    {i}
+                </text>
+            );
+        }
+        return numbers;
     };
 
     const handleCopyToClipboard = () => {
-        html2canvas(fretboardContainer.current).then((canvas) => {
-            canvas.toBlob((blob) => {
-                navigator.clipboard.write([
-                    new window.ClipboardItem(
-                        Object.defineProperty({}, blob.type, {
-                            value: blob,
-                            enumerable: true
-                        })
-                    )
-                ]).then(() => {
-                    // show a toast
-                });
-            });
+        // Hand ClipboardItem the pending PNG instead of waiting for it first:
+        // Safari only allows a clipboard write that starts straight from the click.
+        navigator.clipboard.write([
+            new window.ClipboardItem({ 'image/png': renderPng(fretboardSvg.current) })
+        ]).then(() => {
+            // show a toast
         });
     };
 
-    const saveAs = (uri, filename) => {
-        var link = document.createElement('a');
-        if (typeof link.download === 'string') {
-            link.href = uri;
-            link.download = filename;
-            //Firefox requires the link to be in the body
-            document.body.appendChild(link);
-            //simulate click
-            link.click();
-            //remove the link when done
-            document.body.removeChild(link);
-        } else {
-            window.open(uri);
-        }
-    }
-
     const handleDownload = () => {
-        html2canvas(fretboardContainer.current).then((canvas) => {
-            saveAs(canvas.toDataURL(), 'fretboard.png');
+        renderPng(fretboardSvg.current).then((blob) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'fretboard.png';
+            link.click();
+            // Give the browser a moment to start the download before freeing the blob.
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
     }
 
@@ -121,36 +143,60 @@ const Fretboard = () => {
                 <button className="button" onClick={handleDownload}>
                     Download
                 </button>
-                <div className="switch-group">
-                    <label>Show note names&nbsp;</label>
-                    <Switch checked={showNoteNames} onChange={handleShowNoteNamesChange} />
-                </div>
-                <div className="switch-group">
-                    <label>Show note labels&nbsp;</label>
-                    <Switch checked={showNoteLabels} onChange={handleShowNoteLabelsChange} />
-                </div>
+                <Switch label="Show note names" checked={showNoteNames} onChange={handleShowNoteNamesChange} />
+                <Switch label="Show note labels" checked={showNoteLabels} onChange={handleShowNoteLabelsChange} />
                 <button className="button" onClick={handleClear}>
                     Clear Fretboard
                 </button>
                 <div className="slider-group">
-                    <label>Last fret&nbsp;</label>
+                    <label htmlFor="last-fret">Last fret&nbsp;</label>
                     <input
+                        id="last-fret"
                         type="range"
                         value={lastFret}
                         step={1}
                         min={5}
                         max={24}
-                        onChange={e => setLastFret(e.target.value)}
+                        onChange={e => setLastFret(Number(e.target.value))}
                     />
                 </div>
             </div>
-            <div className="fretboard-container" ref={fretboardContainer}>
-                <div className="fretboard">
-                    {renderStrings()}
-                </div>
-                <div className="fret-numbers">
-                    {renderFretNumbers()}
-                </div>
+            <div className="fretboard-container">
+                <svg
+                    ref={fretboardSvg}
+                    className="fretboard"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width={width}
+                    height={height}
+                    viewBox={`0 0 ${width} ${height}`}
+                    fontFamily="'Ubuntu Mono', monospace"
+                >
+                    <defs>
+                        <clipPath id="fretboard-outline">
+                            <rect x={0.5} y={0.5} width={width - 1} height={boardHeight - 1} rx={5} />
+                        </clipPath>
+                    </defs>
+                    {/* Gives exported images the page's white background. */}
+                    <rect width={width} height={height} fill="#fff" />
+                    <g clipPath="url(#fretboard-outline)">
+                        {renderStrings()}
+                        <g className="fret-wires">
+                            {renderFretWires()}
+                        </g>
+                    </g>
+                    <rect
+                        x={0.5}
+                        y={0.5}
+                        width={width - 1}
+                        height={boardHeight - 1}
+                        rx={5}
+                        fill="none"
+                        stroke="#aeaeae"
+                    />
+                    <g className="fret-numbers">
+                        {renderFretNumbers()}
+                    </g>
+                </svg>
             </div>
         </div>
     );
