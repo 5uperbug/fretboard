@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import GuitarString from "./GuitarString";
 import { renderPng } from "./export";
 import {
@@ -13,9 +13,35 @@ import {
 } from "./geometry";
 
 import Switch from "../components/switch";
+import ThemeToggle from "../components/theme-toggle";
+import { useTheme } from "../theme";
 import './_index.scss';
 
 const fretKey = (stringIndex, fret) => `${stringIndex}:${fret}`;
+
+// Which sides of a horizontally scrolling element have more content hidden, so
+// the edges can fade out as a hint that the board scrolls.
+const useScrollEdges = (ref, contentWidth) => {
+    const [edges, setEdges] = useState({ start: false, end: false });
+
+    useEffect(() => {
+        const el = ref.current;
+        const update = () => setEdges({
+            start: el.scrollLeft > 1,
+            end: el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+        });
+        update();
+        el.addEventListener("scroll", update, { passive: true });
+        const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+        observer?.observe(el);
+        return () => {
+            el.removeEventListener("scroll", update);
+            observer?.disconnect();
+        };
+    }, [ref, contentWidth]);
+
+    return edges;
+};
 
 const Fretboard = () => {
     const [showNoteNames, setShowNoteNames] = useState(true);
@@ -26,10 +52,13 @@ const Fretboard = () => {
     const [lastFret, setLastFret] = useState(15);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
     const fretboardSvg = useRef();
+    const fretboardContainer = useRef();
+    const [theme, setTheme] = useTheme();
 
     const width = 2 * BORDER + NUT_WIDTH + lastFret * FRET_WIDTH;
     const boardHeight = 2 * BORDER + strings.length * STRING_SPACING;
     const height = boardHeight + FRET_NUMBERS_HEIGHT;
+    const scrollEdges = useScrollEdges(fretboardContainer, width);
 
     const toggleFret = (key) => {
         setSelectedFrets((prev) => {
@@ -65,6 +94,7 @@ const Fretboard = () => {
             wires.push(
                 <rect
                     key={i}
+                    className="fret-wire"
                     x={fretX(i)}
                     y={BORDER}
                     width={FRET_WIRE_WIDTH}
@@ -160,8 +190,16 @@ const Fretboard = () => {
                         onChange={e => setLastFret(Number(e.target.value))}
                     />
                 </div>
+                <ThemeToggle theme={theme} onChange={setTheme} />
             </div>
-            <div className="fretboard-container">
+            <div
+                ref={fretboardContainer}
+                className={[
+                    "fretboard-container",
+                    scrollEdges.start && "more-start",
+                    scrollEdges.end && "more-end",
+                ].filter(Boolean).join(" ")}
+            >
                 <svg
                     ref={fretboardSvg}
                     className="fretboard"
@@ -169,6 +207,7 @@ const Fretboard = () => {
                     width={width}
                     height={height}
                     viewBox={`0 0 ${width} ${height}`}
+                    style={{ "--board-width": `${width}px` }}
                     fontFamily="'Ubuntu Mono', monospace"
                 >
                     <defs>
@@ -177,7 +216,7 @@ const Fretboard = () => {
                         </clipPath>
                     </defs>
                     {/* Gives exported images the page's white background. */}
-                    <rect width={width} height={height} fill="#fff" />
+                    <rect className="board-bg" width={width} height={height} fill="#fff" />
                     <g clipPath="url(#fretboard-outline)">
                         {renderStrings()}
                         <g className="fret-wires">
@@ -190,6 +229,7 @@ const Fretboard = () => {
                         width={width - 1}
                         height={boardHeight - 1}
                         rx={5}
+                        className="board-outline"
                         fill="none"
                         stroke="#aeaeae"
                     />

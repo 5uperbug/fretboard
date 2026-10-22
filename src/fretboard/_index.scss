@@ -1,14 +1,31 @@
 .block {
+    // As wide as the fretboard, but never wider than the page; the board then
+    // shrinks to fit, down to a size that is still easy to read and tap.
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
     margin: 0 auto;
     padding: 5px;
-    border: 1px solid #98b9bc;
-    // Let the panel shrink below the fretboard's width on narrow screens; the
-    // fretboard then scrolls sideways instead of widening the page.
-    min-width: 0;
+    border: 1px solid var(--panel-border);
 
     .control-panel {
         .button {
             margin: 0 5px 5px 0;
+        }
+
+        .theme-toggle {
+            margin: 0 5px 5px 0;
+        }
+
+        // Comfortable tap targets on touch screens.
+        @media (pointer: coarse) {
+            .button {
+                min-height: 44px;
+            }
+
+            .theme-toggle span {
+                min-height: 44px;
+            }
         }
 
         label {
@@ -37,25 +54,80 @@
     }
 
     .fretboard-container {
-        max-width: 1200px;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+
+        // Fade whichever edge has more frets scrolled out of view.
+        &.more-start {
+            mask-image: linear-gradient(to right, transparent, #000 32px);
+        }
+
+        &.more-end {
+            mask-image: linear-gradient(to left, transparent, #000 32px);
+        }
+
+        &.more-start.more-end {
+            mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+        }
 
         // Colours and sizes are attributes on the SVG elements so exported
-        // images keep them; only interaction styles live here.
+        // images keep them in the light theme. These rules only restyle the
+        // board on screen, following the page's theme.
         .fretboard {
             display: block;
             user-select: none;
+            width: var(--board-width);
+            max-width: 100%;
+            min-width: calc(var(--board-width) * 0.7);
+            height: auto;
+
+            // Fingers need full-size frets; scroll instead of shrinking.
+            @media (pointer: coarse) {
+                min-width: var(--board-width);
+            }
+
+            .board-bg {
+                fill: var(--bg);
+            }
+
+            .board-outline {
+                stroke: var(--board-outline);
+            }
+
+            .fret-bg {
+                fill: var(--board-fret);
+            }
+
+            .fretzero .fret-bg {
+                fill: var(--board-nut);
+            }
+
+            .string-line {
+                stroke: var(--board-string);
+            }
+
+            .label {
+                fill: var(--board-label);
+            }
+
+            .fret-wire {
+                fill: var(--board-wire);
+            }
+
+            .fret-numbers text {
+                fill: var(--board-number);
+            }
 
             .fret {
                 cursor: cell;
 
                 &:hover {
                     .fret-bg {
-                        fill: #ccc;
+                        fill: var(--board-fret-hover);
                     }
 
                     .string-line {
-                        stroke: #7f7f7f;
+                        stroke: var(--board-string-hover);
                     }
                 }
             }
