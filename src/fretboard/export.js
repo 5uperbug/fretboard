@@ -27,13 +27,27 @@ const loadImage = (src) => new Promise((resolve, reject) => {
     image.src = src;
 });
 
+// The board's on-screen colours come from the theme's CSS, which a standalone
+// image doesn't have, so each element takes the colours it is drawn with now.
+const inlineThemeColours = (svg, copy) => {
+    const originals = [svg, ...svg.querySelectorAll('*')];
+    const copies = [copy, ...copy.querySelectorAll('*')];
+    originals.forEach((element, i) => {
+        const { fill, stroke } = getComputedStyle(element);
+        if (fill) copies[i].setAttribute('fill', fill);
+        if (stroke) copies[i].setAttribute('stroke', stroke);
+    });
+};
+
 // Draws the whole fretboard <svg>, however much of it is scrolled out of view,
-// to a PNG at least twice its on-screen size so it stays sharp.
+// to a PNG at least twice its on-screen size so it stays sharp, in the colours
+// of the theme it is shown in.
 export const renderPng = async (svg) => {
     const { width, height } = svg.viewBox.baseVal;
     const scale = Math.max(2, window.devicePixelRatio);
 
     const copy = svg.cloneNode(true);
+    inlineThemeColours(svg, copy);
     copy.setAttribute('width', width * scale);
     copy.setAttribute('height', height * scale);
     const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
