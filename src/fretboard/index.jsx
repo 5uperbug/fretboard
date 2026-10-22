@@ -381,7 +381,7 @@ const Fretboard = () => {
                             <rect x={0.5} y={0.5} width={width - 1} height={boardHeight - 1} rx={5} />
                         </clipPath>
                     </defs>
-                    {/* Gives exported images the page's white background. */}
+                    {/* Gives exported images the page's background. */}
                     <rect className="board-bg" width={width} height={height} fill="#fff" />
                     <g clipPath="url(#fretboard-outline)">
                         {renderStrings()}

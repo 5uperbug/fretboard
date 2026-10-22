@@ -74,9 +74,9 @@
             mask-image: linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent);
         }
 
-        // Colours and sizes are attributes on the SVG elements so exported
-        // images keep them in the light theme. These rules only restyle the
-        // board on screen, following the page's theme.
+        // Colours are attributes on the SVG elements for the light theme.
+        // These rules restyle the board to follow the page's theme, and
+        // exports copy whatever colours they resolve to.
         .fretboard {
             display: block;
             user-select: none;
