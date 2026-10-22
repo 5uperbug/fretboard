@@ -4,7 +4,6 @@ import { getFretName } from "../utils";
 const Fret = ({ offset, stringName, properties }) => {
     const [selected, setSelected] = useState(false);
     const { showNoteNames, showNoteLabels } = properties;
-    let clickTimeout
 
     const handleClick = () => {
         setSelected(!selected);
