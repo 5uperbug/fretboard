@@ -293,4 +293,125 @@ describe("Fretboard", () => {
             expect(getFret(3, 0)).toHaveAttribute("tabindex", "0");
         });
     });
+
+    describe("fret window", () => {
+        const fretNumbers = (container) =>
+            [...container.querySelectorAll(".fret-numbers text")].map((el) => Number(el.textContent));
+
+        it("shows frets from the first fret, keeping the open strings", async () => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+            const first = screen.getByLabelText("First fret");
+
+            await user.clear(first);
+            await user.type(first, "5");
+            await user.clear(screen.getByLabelText("Last fret"));
+            await user.type(screen.getByLabelText("Last fret"), "9{Enter}");
+
+            expect(fretNumbers(container)).toEqual([5, 6, 7, 8, 9]);
+            expect(getFret(0, 0)).toHaveClass("past-nut");
+            expect(getFret(0, 4)).toBeNull();
+            // Dots at 5, 7 and 9.
+            expect(container.querySelectorAll(".inlays circle")).toHaveLength(3);
+            const svg = container.querySelector("svg.fretboard");
+            expect(Number(svg.getAttribute("width"))).toBe(2 + 38 + 5 * 73);
+        });
+
+        it("pushes the last fret along to keep five frets showing", async () => {
+            const user = userEvent.setup();
+            const { container } = render(<Fretboard />);
+
+            await user.clear(screen.getByLabelText("First fret"));
+            await user.type(screen.getByLabelText("First fret"), "15{Enter}");
+            expect(screen.getByLabelText("Last fret")).toHaveValue(19);
+
+            await user.clear(screen.getByLabelText("Last fret"));
+            await user.type(screen.getByLabelText("Last fret"), "8{Enter}");
+            expect(screen.getByLabelText("First fret")).toHaveValue(4);
+            expect(fretNumbers(container)).toEqual([4, 5, 6, 7, 8]);
+        });
+
+        it("steps over the hidden frets with the arrow keys", async () => {
+            const user = userEvent.setup();
+            render(<Fretboard />);
+
+            await user.clear(screen.getByLabelText("First fret"));
+            await user.type(screen.getByLabelText("First fret"), "7{Enter}");
+            getFret(0, 0).focus();
+
+            await user.keyboard("{ArrowRight}");
+            expect(getFret(0, 7)).toHaveFocus();
+            await user.keyboard("{ArrowLeft}");
+            expect(getFret(0, 0)).toHaveFocus();
+        });
+    });
+
+    describe("saving and sharing", () => {
+        it("comes back as it was after a reload", async () => {
+            const user = userEvent.setup();
+            const first = render(<Fretboard />);
+
+            await user.click(getFret(0, 3));
+            await user.click(screen.getByRole("button", { name: "All notes" }));
+            first.unmount();
+
+            const { container } = render(<Fretboard />);
+            expect(markedNotes(container)).toEqual(["G"]);
+            expect(screen.getByRole("button", { name: "All notes" })).toHaveAttribute("aria-pressed", "true");
+        });
+
+        it("keeps the sketch in the address bar, and a plain address for a fresh board", async () => {
+            const user = userEvent.setup();
+            render(<Fretboard />);
+            expect(window.location.hash).toBe("");
+
+            await user.click(getFret(1, 5));
+            expect(window.location.hash).toBe("#i=guitar-6&f=1-12&m=1.5");
+
+            await user.click(getFret(1, 5));
+            expect(window.location.hash).toBe("");
+        });
+
+        it("opens a shared link and can go back to the saved sketch", async () => {
+            const user = userEvent.setup();
+            const first = render(<Fretboard />);
+            await user.click(getFret(0, 3));
+            first.unmount();
+
+            window.history.replaceState(null, "", "/#i=bass-4&f=1-12&m=0.2");
+            const { container } = render(<Fretboard />);
+
+            expect(container.querySelectorAll(".string")).toHaveLength(4);
+            expect(markedNotes(container)).toEqual(["A"]);
+            expect(screen.getByRole("status")).toHaveTextContent("Opened a shared sketch");
+
+            await user.click(screen.getByRole("button", { name: "Undo" }));
+            expect(container.querySelectorAll(".string")).toHaveLength(6);
+            expect(markedNotes(container)).toEqual(["G"]);
+        });
+
+        it("loads a link pasted into the address bar", () => {
+            const { container } = render(<Fretboard />);
+
+            act(() => {
+                window.history.replaceState(null, "", "/#i=guitar-6&f=3-7&m=2.5");
+                window.dispatchEvent(new HashChangeEvent("hashchange"));
+            });
+
+            expect(markedNotes(container)).toEqual(["C"]);
+            expect(screen.getByLabelText("First fret")).toHaveValue(3);
+        });
+
+        it("copies the link to the sketch", async () => {
+            const user = userEvent.setup();
+            render(<Fretboard />);
+            const writeText = vi.spyOn(navigator.clipboard, "writeText");
+
+            await user.click(getFret(0, 3));
+            await user.click(screen.getByRole("button", { name: "Copy link" }));
+
+            expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/#i=guitar-6&f=1-12&m=0.3`);
+            expect(screen.getByRole("status")).toHaveTextContent("Link copied");
+        });
+    });
 });

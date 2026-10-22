@@ -12,14 +12,17 @@ const Fret = ({
     offset,
     stringIndex,
     stringName,
+    firstFret,
     selected,
     focusable,
     onToggle,
     showNoteNames,
     showNoteLabels,
 }) => {
-    const x = fretX(offset);
-    const cx = fretCenterX(offset);
+    const x = fretX(offset, firstFret);
+    const cx = fretCenterX(offset, firstFret);
+    // Showing a window up the neck, the open strings' column isn't the nut.
+    const pastNut = offset === 0 && firstFret > 1;
     const cy = STRING_SPACING / 2;
     const noteName = getFretName(stringName, offset);
     const position = offset === 0 ? "open" : `fret ${offset}`;
@@ -58,7 +61,7 @@ const Fret = ({
     return (
         <g
             onClick={onToggle}
-            className={`fret ${offset === 0 ? 'fretzero' : ''}`}
+            className={["fret", offset === 0 && "fretzero", pastNut && "past-nut"].filter(Boolean).join(" ")}
             role="button"
             tabIndex={focusable ? 0 : -1}
             aria-pressed={selected}
@@ -71,7 +74,7 @@ const Fret = ({
                 x={x}
                 width={fretWidth(offset)}
                 height={STRING_SPACING}
-                fill={offset === 0 ? "#aaa" : "#fffaef"}
+                fill={offset === 0 && !pastNut ? "#aaa" : "#fffaef"}
             />
             {offset !== 0 && (
                 <line
