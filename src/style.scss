@@ -1,18 +1,76 @@
+// Page and board colours. The fretboard's SVG also carries the light colours as
+// attributes, which is what exported images use; these only restyle the screen.
+@mixin light-colors {
+    color-scheme: light;
+    --bg: #fff;
+    --text: #000;
+    --panel-border: #98b9bc;
+    --control-border: #000;
+    --focus: #008CBA;
+
+    --board-fret: #fffaef;
+    --board-fret-hover: #ccc;
+    --board-nut: #aaa;
+    --board-string: #d6b698;
+    --board-string-hover: #7f7f7f;
+    --board-wire: #323232;
+    --board-outline: #aeaeae;
+    --board-number: #818181;
+    --board-label: #000;
+}
+
+@mixin dark-colors {
+    color-scheme: dark;
+    --bg: #16181b;
+    --text: #e8e6e3;
+    --panel-border: #3d5457;
+    --control-border: #8b8f94;
+    --focus: #4fb8e0;
+
+    --board-fret: #2a2420;
+    --board-fret-hover: #463c34;
+    --board-nut: #5b5b5b;
+    --board-string: #a88a6c;
+    --board-string-hover: #d9c2a8;
+    --board-wire: #c8c8c8;
+    --board-outline: #55595e;
+    --board-number: #a3a7ac;
+    --board-label: #fff;
+}
+
+:root {
+    @include light-colors;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        @include dark-colors;
+    }
+}
+
+:root[data-theme="dark"] {
+    @include dark-colors;
+}
+
 * {
     font-family: 'Ubuntu Mono', monospace;
 }
 
 body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+
     .container {
-        margin-top: 30px;
-        display: flex;
-        align-items: center;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 30px 16px;
     }
 
     .button {
         background-color: transparent;
-        border: 1px #000 solid;
-        color: #000;
+        border: 1px var(--control-border) solid;
+        color: var(--text);
         padding: 10px 15px;
         text-align: center;
         text-decoration: none;
@@ -22,30 +80,15 @@ body {
         opacity: 0.8;
         transition: all 0.5s ease;
 
-        &.button-green {
-            background-color: #4CAF50;
-        }
-
-        &.button-blue {
-            background-color: #008CBA;
-        }
-
-        &.button-red {
-            background-color: #f44336;
-        }
-
-        &.button-grey {
-            background-color: #e7e7e7;
-            color: black;
-        }
-
-        &.button-black {
-            background-color: #555555;
-        }
-
         &:hover {
             opacity: 1;
         }
+    }
+}
+
+@media (max-width: 600px) {
+    body .container {
+        padding: 16px 8px;
     }
 }
 
