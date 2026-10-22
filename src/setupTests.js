@@ -4,5 +4,8 @@ import { afterEach, vi } from "vitest";
 
 afterEach(() => {
     cleanup();
+    // The board saves itself and writes its link to the address bar.
+    localStorage.clear();
+    window.history.replaceState(null, "", "/");
     vi.restoreAllMocks();
 });

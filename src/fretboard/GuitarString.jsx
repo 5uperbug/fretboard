@@ -4,7 +4,8 @@ import { BORDER, STRING_SPACING } from "./geometry";
 const GuitarString = ({
     name,
     index,
-    noOfFrets,
+    firstFret,
+    lastFret,
     isSelected,
     isFocusable,
     onToggleFret,
@@ -14,13 +15,19 @@ const GuitarString = ({
     const renderFrets = () => {
         const frets = [];
 
-        for (let i = 0; i <= noOfFrets; i++) {
+        // The open string, then the frets in the window.
+        const offsets = [0];
+        for (let i = firstFret; i <= lastFret; i++) {
+            offsets.push(i);
+        }
+        for (const i of offsets) {
             frets.push(
                 <Fret
                     offset={i}
                     key={i}
                     stringIndex={index}
                     stringName={name}
+                    firstFret={firstFret}
                     selected={isSelected(i)}
                     focusable={isFocusable(i)}
                     onToggle={() => onToggleFret(i)}

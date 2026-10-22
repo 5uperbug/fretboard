@@ -7,12 +7,15 @@ export const FRET_WIDTH = 73;
 export const STRING_SPACING = 35;
 export const FRET_NUMBERS_HEIGHT = 35;
 
-export const fretX = (fret) => (fret === 0 ? BORDER : BORDER + NUT_WIDTH + (fret - 1) * FRET_WIDTH);
+// Positions count from `firstFret`, the first fret drawn after the nut, so the
+// board can show a window such as frets 5 to 9.
+export const fretX = (fret, firstFret = 1) =>
+    fret === 0 ? BORDER : BORDER + NUT_WIDTH + (fret - firstFret) * FRET_WIDTH;
 
 export const fretWidth = (fret) => (fret === 0 ? NUT_WIDTH : FRET_WIDTH);
 
 // Middle of the nut, or of the space between a fret's wire and the next one.
-export const fretCenterX = (fret) =>
+export const fretCenterX = (fret, firstFret = 1) =>
     fret === 0
         ? BORDER + NUT_WIDTH / 2
-        : fretX(fret) + FRET_WIRE_WIDTH + (FRET_WIDTH - FRET_WIRE_WIDTH) / 2;
+        : fretX(fret, firstFret) + FRET_WIRE_WIDTH + (FRET_WIDTH - FRET_WIRE_WIDTH) / 2;

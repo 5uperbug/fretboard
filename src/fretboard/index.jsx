@@ -1,7 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import GuitarString from "./GuitarString";
 import { renderPng } from "./export";
-import { DEFAULT_INSTRUMENT, INSTRUMENTS, TUNING_NOTES, findTuning, getInstrument, standardTuning } from "./instruments";
+import { INSTRUMENTS, TUNING_NOTES, findTuning, getInstrument, standardTuning } from "./instruments";
+import {
+    DEFAULT_SKETCH,
+    MAX_FRET,
+    MIN_FRET,
+    MIN_FRETS,
+    fromHash,
+    isSameSketch,
+    loadSaved,
+    save,
+    toHash,
+} from "./sketch";
 import {
     BORDER,
     FRET_NUMBERS_HEIGHT,
@@ -22,17 +33,16 @@ const SINGLE_INLAYS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_INLAYS = [12, 24];
 const STATUS_TIMEOUT = 4000;
 const UNDO_TIMEOUT = 8000;
-const MIN_LAST_FRET = 5;
-const MAX_LAST_FRET = 24;
 
-// Arrow keys move between frets; Home and End jump along the string.
+// Arrow keys move between frets; Home and End jump along the string. Left of
+// the first fret in the window is the open string.
 const KEY_MOVES = {
-    ArrowLeft: (s, f) => [s, f - 1],
-    ArrowRight: (s, f) => [s, f + 1],
+    ArrowLeft: (s, f, { firstFret }) => [s, f === firstFret ? 0 : f - 1],
+    ArrowRight: (s, f, { firstFret }) => [s, f === 0 ? firstFret : f + 1],
     ArrowUp: (s, f) => [s - 1, f],
     ArrowDown: (s, f) => [s + 1, f],
     Home: (s) => [s, 0],
-    End: (s, f, lastFret) => [s, lastFret],
+    End: (s, f, { lastFret }) => [s, lastFret],
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -82,6 +92,61 @@ const useScrollEdges = (ref, contentWidth) => {
     return edges;
 };
 
+// The sketch to start with: a shared link first, then what was there last time.
+const initialSketch = () => {
+    const saved = loadSaved();
+    const linked = fromHash(window.location.hash);
+    return {
+        sketch: linked ?? saved ?? DEFAULT_SKETCH,
+        // The saved sketch a link replaced, so opening a link can be undone.
+        replaced: linked && saved && !isSameSketch(linked, saved) ? saved : null,
+    };
+};
+
+// A fret number box. Numbers in range apply while typing; anything else is
+// clamped, or undone if it isn't a number, when the box loses focus.
+const FretInput = ({ id, label, value, min, max, onChange }) => {
+    const [draft, setDraft] = useState(null);
+
+    const handleChange = (e) => {
+        const text = e.target.value;
+        const number = Number(text);
+        setDraft(text);
+        if (text !== "" && Number.isInteger(number) && number >= min && number <= max) {
+            onChange(number);
+        }
+    };
+
+    const commit = () => {
+        if (draft === null) {
+            return;
+        }
+        const number = Math.round(Number(draft));
+        if (draft !== "" && Number.isFinite(number)) {
+            onChange(clamp(number, min, max));
+        }
+        setDraft(null);
+    };
+
+    return (
+        <div className="number-group">
+            <label htmlFor={id}>{label}</label>
+            <input
+                id={id}
+                type="number"
+                inputMode="numeric"
+                value={draft ?? value}
+                step={1}
+                min={min}
+                max={max}
+                onChange={handleChange}
+                onBlur={commit}
+                onKeyDown={(e) => e.key === "Enter" && commit()}
+            />
+        </div>
+    );
+};
+
 // A button that stays pressed while its setting is on.
 const ToggleChip = ({ label, pressed, onChange }) => (
     <button className="chip" aria-pressed={pressed} onClick={() => onChange(!pressed)}>
@@ -95,26 +160,31 @@ const ToggleChip = ({ label, pressed, onChange }) => (
 );
 
 const Fretboard = () => {
-    const [showNoteNames, setShowNoteNames] = useState(true);
-    const [showNoteLabels, setShowNoteLabels] = useState(false);
+    const [start] = useState(initialSketch);
+    const [showNoteNames, setShowNoteNames] = useState(start.sketch.showNoteNames);
+    const [showNoteLabels, setShowNoteLabels] = useState(start.sketch.showNoteLabels);
     // Marked frets as "string:fret" keys. Kept here rather than in each Fret so
     // marks survive the fret range shrinking and can be cleared in one update.
-    const [selectedFrets, setSelectedFrets] = useState(() => new Set());
-    const [lastFret, setLastFret] = useState(12);
-    const [instrumentId, setInstrumentId] = useState(DEFAULT_INSTRUMENT);
+    const [selectedFrets, setSelectedFrets] = useState(() => new Set(start.sketch.marks));
+    // The window of frets drawn after the nut.
+    const [firstFret, setFirstFret] = useState(start.sketch.firstFret);
+    const [lastFret, setLastFret] = useState(start.sketch.lastFret);
+    const [instrumentId, setInstrumentId] = useState(start.sketch.instrumentId);
     // Each instrument's tuning, low string first, so a custom tuning is still
     // there after trying another instrument.
-    const [tunings, setTunings] = useState({});
+    const [tunings, setTunings] = useState(start.sketch.tunings);
     // Whether the instrument and tuning pickers are open under their summary.
     const [tuningOpen, setTuningOpen] = useState(false);
-    // What is typed in the Last fret box while it has focus. Numbers in range
-    // apply straight away; anything else is clamped or undone on blur.
-    const [lastFretDraft, setLastFretDraft] = useState(null);
     // The fret that is in the tab order, and whether to draw a focus ring on it.
     const [activeCell, setActiveCell] = useState({ string: 0, fret: 0 });
     const [showFocusRing, setShowFocusRing] = useState(false);
     // A short message under the controls, optionally with an Undo action.
-    const [status, setStatus] = useState(null);
+    // Opening a link replaces the sketch saved in this browser, so offer it back
+    // (by name, as the handler isn't defined yet).
+    const [status, setStatus] = useState(() => start.replaced && {
+        message: "Opened a shared sketch",
+        undo: "restore-saved",
+    });
     const statusTimer = useRef();
     const fretboardSvg = useRef();
     const fretboardContainer = useRef();
@@ -125,11 +195,22 @@ const Fretboard = () => {
     const strings = [...tuning].reverse();
     const tuningPreset = findTuning(instrumentId, tuning);
 
-    const width = 2 * BORDER + NUT_WIDTH + lastFret * FRET_WIDTH;
+    const sketch = {
+        instrumentId,
+        tunings,
+        marks: [...selectedFrets],
+        firstFret,
+        lastFret,
+        showNoteNames,
+        showNoteLabels,
+    };
+    const hash = toHash(sketch);
+
+    const width = 2 * BORDER + NUT_WIDTH + (lastFret - firstFret + 1) * FRET_WIDTH;
     const boardHeight = 2 * BORDER + strings.length * STRING_SPACING;
     const height = boardHeight + FRET_NUMBERS_HEIGHT;
     const scrollEdges = useScrollEdges(fretboardContainer, width);
-    const activeFret = Math.min(activeCell.fret, lastFret);
+    const activeFret = activeCell.fret === 0 ? 0 : clamp(activeCell.fret, firstFret, lastFret);
     const activeString = Math.min(activeCell.string, strings.length - 1);
 
     useEffect(() => () => clearTimeout(statusTimer.current), []);
@@ -139,6 +220,54 @@ const Fretboard = () => {
         setStatus({ message, undo, error });
         statusTimer.current = setTimeout(() => setStatus(null), undo ? UNDO_TIMEOUT : STATUS_TIMEOUT);
     };
+
+    const loadSketch = (next) => {
+        setInstrumentId(next.instrumentId);
+        setTunings((prev) => ({ ...prev, ...next.tunings }));
+        setSelectedFrets(new Set(next.marks));
+        setFirstFret(next.firstFret);
+        setLastFret(next.lastFret);
+        setShowNoteNames(next.showNoteNames);
+        setShowNoteLabels(next.showNoteLabels);
+    };
+
+    // Keep the sketch for next time, and in the address bar so the page's
+    // link always opens what is on screen. replaceState keeps Back working.
+    // A fresh board keeps a plain address.
+    const sketchJson = JSON.stringify(sketch);
+    useEffect(() => {
+        const current = JSON.parse(sketchJson);
+        save(current);
+        const target = isSameSketch(current, DEFAULT_SKETCH) ? "" : hash;
+        if (window.location.hash !== target) {
+            const { pathname, search } = window.location;
+            window.history.replaceState(window.history.state, "", `${pathname}${search}${target}`);
+        }
+    }, [sketchJson, hash]);
+
+    // A link pasted into this tab's address bar.
+    useEffect(() => {
+        const handleHashChange = () => {
+            const linked = fromHash(window.location.hash);
+            if (linked) {
+                loadSketch(linked);
+            }
+        };
+        window.addEventListener("hashchange", handleHashChange);
+        return () => window.removeEventListener("hashchange", handleHashChange);
+    }, []);
+
+    const restoreSaved = () => {
+        loadSketch(start.replaced);
+        showStatus("Your sketch is back");
+    };
+
+    // The offer to undo opening a link goes away like any other message.
+    useEffect(() => {
+        if (start.replaced) {
+            statusTimer.current = setTimeout(() => setStatus(null), UNDO_TIMEOUT);
+        }
+    }, [start]);
 
     const toggleFret = (key) => {
         setSelectedFrets((prev) => {
@@ -172,8 +301,11 @@ const Fretboard = () => {
             toggleFret(fretKey(string, offset));
         } else if (KEY_MOVES[e.key]) {
             e.preventDefault();
-            const [nextString, nextFret] = KEY_MOVES[e.key](string, offset, lastFret);
-            focusFret(clamp(nextString, 0, strings.length - 1), clamp(nextFret, 0, lastFret));
+            const [nextString, nextFret] = KEY_MOVES[e.key](string, offset, { firstFret, lastFret });
+            focusFret(
+                clamp(nextString, 0, strings.length - 1),
+                nextFret === 0 ? 0 : clamp(nextFret, firstFret, lastFret),
+            );
         }
     };
 
@@ -197,7 +329,8 @@ const Fretboard = () => {
                 key={idx}
                 name={string}
                 index={idx}
-                noOfFrets={lastFret}
+                firstFret={firstFret}
+                lastFret={lastFret}
                 isSelected={(fret) => selectedFrets.has(fretKey(idx, fret))}
                 isFocusable={(fret) => idx === activeString && fret === activeFret}
                 onToggleFret={(fret) => toggleFret(fretKey(idx, fret))}
@@ -210,12 +343,12 @@ const Fretboard = () => {
     const renderFretWires = () => {
         const wires = [];
 
-        for (let i = 1; i <= lastFret; i++) {
+        for (let i = firstFret; i <= lastFret; i++) {
             wires.push(
                 <rect
                     key={i}
                     className="fret-wire"
-                    x={fretX(i)}
+                    x={fretX(i, firstFret)}
                     y={BORDER}
                     width={FRET_WIRE_WIDTH}
                     height={strings.length * STRING_SPACING}
@@ -233,27 +366,28 @@ const Fretboard = () => {
         const dot = (fret, betweenStrings) => (
             <circle
                 key={`${fret}:${betweenStrings}`}
-                cx={fretCenterX(fret)}
+                cx={fretCenterX(fret, firstFret)}
                 cy={BORDER + betweenStrings * STRING_SPACING}
                 r={4}
                 fill="#dccaa6"
             />
         );
         const lines = inlayLines(strings.length);
+        const shown = (fret) => fret >= firstFret && fret <= lastFret;
         return [
-            ...SINGLE_INLAYS.filter((fret) => fret <= lastFret).map((fret) => dot(fret, lines.single)),
-            ...DOUBLE_INLAYS.filter((fret) => fret <= lastFret).flatMap((fret) => lines.double.map((line) => dot(fret, line))),
+            ...SINGLE_INLAYS.filter(shown).map((fret) => dot(fret, lines.single)),
+            ...DOUBLE_INLAYS.filter(shown).flatMap((fret) => lines.double.map((line) => dot(fret, line))),
         ];
     };
 
     const renderFretNumbers = () => {
         const numbers = [];
 
-        for (let i = 1; i <= lastFret; i++) {
+        for (let i = firstFret; i <= lastFret; i++) {
             numbers.push(
                 <text
                     key={i}
-                    x={fretCenterX(i)}
+                    x={fretCenterX(i, firstFret)}
                     y={boardHeight + FRET_NUMBERS_HEIGHT / 2}
                     textAnchor="middle"
                     dominantBaseline="central"
@@ -270,7 +404,7 @@ const Fretboard = () => {
     const renderFocusRing = () => (
         <rect
             className="focus-ring"
-            x={fretX(activeFret) + 1.5}
+            x={fretX(activeFret, firstFret) + 1.5}
             y={BORDER + activeString * STRING_SPACING + 1.5}
             width={fretWidth(activeFret) - 3}
             height={STRING_SPACING - 3}
@@ -309,24 +443,28 @@ const Fretboard = () => {
         }, () => showStatus("Couldn't create the image.", { error: true }));
     }
 
-    const handleLastFretChange = (e) => {
-        const text = e.target.value;
-        const value = Number(text);
-        setLastFretDraft(text);
-        if (text !== "" && Number.isInteger(value) && value >= MIN_LAST_FRET && value <= MAX_LAST_FRET) {
-            setLastFret(value);
-        }
-    };
-
-    const commitLastFret = () => {
-        if (lastFretDraft === null) {
+    const handleCopyLink = () => {
+        const url = new URL(hash, window.location.href).href;
+        if (!navigator.clipboard?.writeText) {
+            showStatus("This browser can't copy. The link is in the address bar.", { error: true });
             return;
         }
-        const value = Math.round(Number(lastFretDraft));
-        if (lastFretDraft !== "" && Number.isFinite(value)) {
-            setLastFret(clamp(value, MIN_LAST_FRET, MAX_LAST_FRET));
-        }
-        setLastFretDraft(null);
+        navigator.clipboard.writeText(url).then(
+            () => showStatus("Link copied"),
+            () => showStatus("Couldn't copy the link. It's in the address bar.", { error: true }),
+        );
+    };
+
+    // The window always shows at least MIN_FRETS frets, so moving one end
+    // pushes the other along when they would get too close.
+    const handleFirstFretChange = (value) => {
+        setFirstFret(value);
+        setLastFret((last) => clamp(last, value + MIN_FRETS - 1, MAX_FRET));
+    };
+
+    const handleLastFretChange = (value) => {
+        setLastFret(value);
+        setFirstFret((first) => clamp(first, MIN_FRET, value - MIN_FRETS + 1));
     };
 
     // Marks belong to a string position counted from the top, so a 6-string
@@ -444,21 +582,22 @@ const Fretboard = () => {
                 <div className="display-controls" role="group" aria-label="Display">
                     <ToggleChip label="Names on marks" pressed={showNoteNames} onChange={setShowNoteNames} />
                     <ToggleChip label="All notes" pressed={showNoteLabels} onChange={setShowNoteLabels} />
-                    <div className="number-group">
-                        <label htmlFor="last-fret">Last fret</label>
-                        <input
-                            id="last-fret"
-                            type="number"
-                            inputMode="numeric"
-                            value={lastFretDraft ?? lastFret}
-                            step={1}
-                            min={MIN_LAST_FRET}
-                            max={MAX_LAST_FRET}
-                            onChange={handleLastFretChange}
-                            onBlur={commitLastFret}
-                            onKeyDown={(e) => e.key === "Enter" && commitLastFret()}
-                        />
-                    </div>
+                    <FretInput
+                        id="first-fret"
+                        label="First fret"
+                        value={firstFret}
+                        min={MIN_FRET}
+                        max={MAX_FRET - MIN_FRETS + 1}
+                        onChange={handleFirstFretChange}
+                    />
+                    <FretInput
+                        id="last-fret"
+                        label="Last fret"
+                        value={lastFret}
+                        min={MIN_FRET + MIN_FRETS - 1}
+                        max={MAX_FRET}
+                        onChange={handleLastFretChange}
+                    />
                 </div>
             </div>
             <div className={`status ${status?.error ? 'status-error' : ''}`} role="status">
@@ -466,7 +605,10 @@ const Fretboard = () => {
                     <>
                         {status.message}
                         {status.undo && (
-                            <button className="button button-small" onClick={status.undo}>
+                            <button
+                                className="button button-small"
+                                onClick={status.undo === "restore-saved" ? restoreSaved : status.undo}
+                            >
                                 Undo
                             </button>
                         )}
@@ -532,7 +674,10 @@ const Fretboard = () => {
                 <button className="button button-danger" onClick={handleClear}>
                     Clear marks
                 </button>
-                <button className="button board-actions-export" onClick={handleCopyToClipboard}>
+                <button className="button board-actions-export" onClick={handleCopyLink}>
+                    Copy link
+                </button>
+                <button className="button" onClick={handleCopyToClipboard}>
                     Copy image
                 </button>
                 <button className="button" onClick={handleDownload}>
