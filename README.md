@@ -1,6 +1,6 @@
-# Fretboard
+# Fretsketch
 
-An interactive guitar fretboard. Click frets to mark notes, then copy the diagram to the clipboard or download it as a PNG.
+Sketch guitar fretboard diagrams. Click frets (or Tab to the board, move with the arrow keys and press Space) to mark notes, then copy the diagram to the clipboard or download it as a PNG.
 
 Live at https://fretboard.5uperbug.com
 

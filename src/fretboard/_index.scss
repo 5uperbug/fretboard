@@ -9,47 +9,54 @@
     border: 1px solid var(--panel-border);
 
     .control-panel {
-        .button {
-            margin: 0 5px 5px 0;
-        }
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 20px;
+        padding: 4px 2px 8px;
+    }
 
-        .theme-toggle {
-            margin: 0 5px 5px 0;
-        }
+    .control-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
 
-        // Comfortable tap targets on touch screens.
+        // Keep the destructive action apart from the others.
+        &-end {
+            margin-left: auto;
+        }
+    }
+
+    .switch-group {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+
         @media (pointer: coarse) {
-            .button {
-                min-height: 44px;
-            }
+            min-height: 44px;
+        }
+    }
 
-            .theme-toggle span {
-                min-height: 44px;
+    .slider-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        input[type="range"] {
+            width: 90px;
+            margin: 0;
+            accent-color: var(--focus);
+
+            @media (pointer: coarse) {
+                height: 44px;
             }
         }
 
-        label {
-            font-size: 12px;
-        }
-
-        .switch-group {
-            display: inline-block;
-            margin: 0 5px 5px 0;
-            cursor: pointer;
-        }
-
-        .slider-group {
-            display: inline-block;
-            margin: 0 5px 5px 0;
-
-            label {
-                vertical-align: text-top;
-            }
-
-            input[type="range"] {
-                width: 70px;
-                margin: 0;
-            }
+        output {
+            min-width: 2ch;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
         }
     }
 
@@ -106,8 +113,24 @@
                 stroke: var(--board-string);
             }
 
+            .string-name {
+                fill: var(--board-string-name);
+            }
+
             .label {
                 fill: var(--board-label);
+            }
+
+            .marker-dot {
+                fill: var(--board-marker);
+            }
+
+            .inlays circle {
+                fill: var(--board-inlay);
+            }
+
+            .focus-ring {
+                stroke: var(--focus);
             }
 
             .fret-wire {
@@ -120,6 +143,7 @@
 
             .fret {
                 cursor: cell;
+                outline: none;
 
                 &:hover {
                     .fret-bg {
@@ -135,6 +159,43 @@
             .fret-wires {
                 pointer-events: none;
             }
+        }
+    }
+}
+
+// Short messages float at the bottom of the screen so the board doesn't jump.
+.status {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background-color: var(--text);
+    color: var(--bg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+    &:empty {
+        display: none;
+    }
+
+    &-error {
+        background-color: var(--danger);
+    }
+
+    .button {
+        border-color: currentColor;
+        color: inherit;
+
+        &:hover {
+            background-color: rgba(127, 127, 127, 0.25);
         }
     }
 }

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 
-import Fretboard from "../fretboard";
+import App from "../App";
 
 afterEach(() => {
     localStorage.clear();
@@ -11,7 +11,7 @@ afterEach(() => {
 
 describe("Theme", () => {
     it("follows the system setting by default", () => {
-        render(<Fretboard />);
+        render(<App />);
 
         expect(screen.getByLabelText("Auto")).toBeChecked();
         expect(document.documentElement.dataset.theme).toBeUndefined();
@@ -19,7 +19,7 @@ describe("Theme", () => {
 
     it("remembers a chosen theme and forgets it when set back to Auto", async () => {
         const user = userEvent.setup();
-        render(<Fretboard />);
+        render(<App />);
 
         await user.click(screen.getByLabelText("Dark"));
         expect(document.documentElement.dataset.theme).toBe("dark");
@@ -32,7 +32,7 @@ describe("Theme", () => {
 
     it("starts with the saved theme", () => {
         localStorage.setItem("theme", "light");
-        render(<Fretboard />);
+        render(<App />);
 
         expect(screen.getByLabelText("Light")).toBeChecked();
         expect(document.documentElement.dataset.theme).toBe("light");

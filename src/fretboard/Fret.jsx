@@ -8,37 +8,63 @@ const noteTextProps = {
     fontWeight: "bold",
 };
 
-const Fret = ({ offset, stringName, selected, onToggle, showNoteNames, showNoteLabels }) => {
+const Fret = ({
+    offset,
+    stringIndex,
+    stringName,
+    selected,
+    focusable,
+    onToggle,
+    showNoteNames,
+    showNoteLabels,
+}) => {
     const x = fretX(offset);
     const cx = fretCenterX(offset);
     const cy = STRING_SPACING / 2;
+    const noteName = getFretName(stringName, offset);
+    const position = offset === 0 ? "open" : `fret ${offset}`;
 
     const renderLayer = () => {
         if (selected) {
             return (
                 <g className="marker">
-                    <circle cx={cx} cy={cy} r={13} fill="red" />
+                    <circle className="marker-dot" cx={cx} cy={cy} r={13} fill="#c62828" />
                     {showNoteNames && (
                         <text x={cx} y={cy} fill="#fff" {...noteTextProps}>
-                            {getFretName(stringName, offset)}
+                            {noteName}
                         </text>
                     )}
                 </g>
             );
+        } else if (offset === 0) {
+            // The nut always names its string.
+            return (
+                <text className="string-name" x={cx} y={cy} fill="#333" {...noteTextProps} fontSize={15}>
+                    {noteName}
+                </text>
+            );
         } else if (showNoteLabels) {
             return (
-                <text className="label" x={cx} y={cy} fill="#000" fillOpacity={0.1} {...noteTextProps}>
-                    {getFretName(stringName, offset)}
+                <text className="label" x={cx} y={cy} fill="#7a6f5c" {...noteTextProps}>
+                    {noteName}
                 </text>
             );
         }
         return null;
     }
 
+    // Each fret is a toggle button. Only one fret is in the tab order at a
+    // time; the arrow keys move between them (see Fretboard).
     return (
         <g
             onClick={onToggle}
             className={`fret ${offset === 0 ? 'fretzero' : ''}`}
+            role="button"
+            tabIndex={focusable ? 0 : -1}
+            aria-pressed={selected}
+            aria-label={`String ${stringIndex + 1}, ${position}, ${noteName}`}
+            data-string={stringIndex}
+            data-fret={offset}
         >
             <rect
                 className="fret-bg"

@@ -1,7 +1,16 @@
 import Fret from "./Fret";
 import { BORDER, STRING_SPACING } from "./geometry";
 
-const GuitarString = ({ name, index, noOfFrets, isSelected, onToggleFret, showNoteNames, showNoteLabels }) => {
+const GuitarString = ({
+    name,
+    index,
+    noOfFrets,
+    isSelected,
+    isFocusable,
+    onToggleFret,
+    showNoteNames,
+    showNoteLabels,
+}) => {
     const renderFrets = () => {
         const frets = [];
 
@@ -10,8 +19,10 @@ const GuitarString = ({ name, index, noOfFrets, isSelected, onToggleFret, showNo
                 <Fret
                     offset={i}
                     key={i}
+                    stringIndex={index}
                     stringName={name}
                     selected={isSelected(i)}
+                    focusable={isFocusable(i)}
                     onToggle={() => onToggleFret(i)}
                     showNoteNames={showNoteNames}
                     showNoteLabels={showNoteLabels}
