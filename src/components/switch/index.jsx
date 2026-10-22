@@ -1,10 +1,8 @@
-import React from "react";
-
 import "./_index.scss";
 
 const Switch = ({ name, checked, onChange, disabled }) => {
     return (
-        <div className="switch switch-small" onClick={e => onChange(!checked)}>
+        <div className="switch switch-small" onClick={() => onChange(!checked)}>
             <input
                 type="checkbox"
                 className="switch-checkbox"
