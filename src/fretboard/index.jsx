@@ -1,34 +1,44 @@
-import React, { useRef, useState } from "react";
-import String from "./String";
+import { useRef, useState } from "react";
+import GuitarString from "./GuitarString";
 import html2canvas from 'html2canvas';
 
 import Switch from "../components/switch";
 import './_index.scss';
 
+const fretKey = (stringIndex, fret) => `${stringIndex}:${fret}`;
+
 const Fretboard = () => {
     const [showNoteNames, setShowNoteNames] = useState(true);
     const [showNoteLabels, setShowNoteLabels] = useState(false);
-    const [stateBustingKey, setStateBustingKey] = useState(0);
+    // Marked frets as "string:fret" keys. Kept here rather than in each Fret so
+    // marks survive the fret range shrinking and can be cleared in one update.
+    const [selectedFrets, setSelectedFrets] = useState(() => new Set());
     const [lastFret, setLastFret] = useState(15);
     const strings = ['E', 'B', 'G', 'D', 'A', 'E'];
     const fretboardContainer = useRef();
 
-
-    const getFretboardProps = () => {
-        return {
-            showNoteNames,
-            showNoteLabels
-        };
-    }
+    const toggleFret = (key) => {
+        setSelectedFrets((prev) => {
+            const next = new Set(prev);
+            if (next.has(key)) {
+                next.delete(key);
+            } else {
+                next.add(key);
+            }
+            return next;
+        });
+    };
 
     const renderStrings = () => {
         return strings.map((string, idx) => (
-            <String
-                key={`${idx}${stateBustingKey}`}
+            <GuitarString
+                key={idx}
                 name={string}
-                index={idx}
                 noOfFrets={lastFret}
-                properties={getFretboardProps()}
+                isSelected={(fret) => selectedFrets.has(fretKey(idx, fret))}
+                onToggleFret={(fret) => toggleFret(fretKey(idx, fret))}
+                showNoteNames={showNoteNames}
+                showNoteLabels={showNoteLabels}
             />
         ));
     };
@@ -90,7 +100,7 @@ const Fretboard = () => {
 
     const handleClear = () => {
         if (window.confirm('Do you want to clear this fretboard?')) {
-            setStateBustingKey(stateBustingKey + 1);
+            setSelectedFrets(new Set());
         }
     }
 

@@ -1,14 +1,6 @@
-import React, { useState } from "react";
 import { getFretName } from "../utils";
 
-const Fret = ({ offset, stringName, properties }) => {
-    const [selected, setSelected] = useState(false);
-    const { showNoteNames, showNoteLabels } = properties;
-
-    const handleClick = () => {
-        setSelected(!selected);
-    };
-
+const Fret = ({ offset, stringName, selected, onToggle, showNoteNames, showNoteLabels }) => {
     const handleDoubleClick = () => {
         console.log('double click');
     }
@@ -31,7 +23,7 @@ const Fret = ({ offset, stringName, properties }) => {
 
     return (
         <div
-            onClick={handleClick}
+            onClick={onToggle}
             onDoubleClick={handleDoubleClick}
             className={`fret ${offset === 0 ? 'fretzero' : ''}`}
         >
