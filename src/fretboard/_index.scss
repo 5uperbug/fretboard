@@ -34,11 +34,40 @@
         }
     }
 
-    .number-group {
+    .number-group,
+    .select-group {
         display: inline-flex;
         align-items: center;
         gap: 8px;
+    }
 
+    .tuning-strings {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    select {
+        min-height: 34px;
+        box-sizing: border-box;
+        padding: 0 4px;
+        border: 1px solid var(--control-border);
+        border-radius: 6px;
+        background-color: var(--bg);
+        color: var(--text);
+
+        @media (pointer: coarse) {
+            min-height: 44px;
+            font-size: 16px; // stops iOS zooming in on focus
+        }
+    }
+
+    .tuning-strings select {
+        width: 3.6em;
+        font-family: 'Ubuntu Mono', monospace;
+    }
+
+    .number-group {
         input[type="number"] {
             width: 4.5em;
             min-height: 34px;

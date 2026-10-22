@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import GuitarString from "./GuitarString";
 import { renderPng } from "./export";
+import { DEFAULT_INSTRUMENT, INSTRUMENTS, TUNING_NOTES, findTuning, getInstrument, standardTuning } from "./instruments";
 import {
     BORDER,
     FRET_NUMBERS_HEIGHT,
@@ -18,7 +19,6 @@ import './_index.scss';
 
 const fretKey = (stringIndex, fret) => `${stringIndex}:${fret}`;
 
-const STRINGS = ['E', 'B', 'G', 'D', 'A', 'E'];
 const SINGLE_INLAYS = [3, 5, 7, 9, 15, 17, 19, 21];
 const DOUBLE_INLAYS = [12, 24];
 const STATUS_TIMEOUT = 4000;
@@ -37,6 +37,19 @@ const KEY_MOVES = {
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+// Inlays sit on the lines between strings (line 1 is between the top two
+// strings), centred on the neck. With an odd number of strings the middle is a
+// string, so the single dot goes on the line just above it.
+const inlayLines = (stringCount) => {
+    const middle = stringCount / 2;
+    return {
+        single: Math.floor(middle),
+        double: [Math.floor(middle) - 1, Math.ceil(middle) + 1],
+    };
+};
+
+const CUSTOM_TUNING = "custom";
 
 const isFocusVisible = (el) => {
     try {
@@ -77,6 +90,10 @@ const Fretboard = () => {
     // marks survive the fret range shrinking and can be cleared in one update.
     const [selectedFrets, setSelectedFrets] = useState(() => new Set());
     const [lastFret, setLastFret] = useState(15);
+    const [instrumentId, setInstrumentId] = useState(DEFAULT_INSTRUMENT);
+    // Each instrument's tuning, low string first, so a custom tuning is still
+    // there after trying another instrument.
+    const [tunings, setTunings] = useState({});
     // What is typed in the Last fret box while it has focus. Numbers in range
     // apply straight away; anything else is clamped or undone on blur.
     const [lastFretDraft, setLastFretDraft] = useState(null);
@@ -89,11 +106,17 @@ const Fretboard = () => {
     const fretboardSvg = useRef();
     const fretboardContainer = useRef();
 
+    const tuning = tunings[instrumentId] ?? standardTuning(instrumentId);
+    // Top to bottom as drawn: highest string first, like string numbers.
+    const strings = [...tuning].reverse();
+    const tuningPreset = findTuning(instrumentId, tuning);
+
     const width = 2 * BORDER + NUT_WIDTH + lastFret * FRET_WIDTH;
-    const boardHeight = 2 * BORDER + STRINGS.length * STRING_SPACING;
+    const boardHeight = 2 * BORDER + strings.length * STRING_SPACING;
     const height = boardHeight + FRET_NUMBERS_HEIGHT;
     const scrollEdges = useScrollEdges(fretboardContainer, width);
     const activeFret = Math.min(activeCell.fret, lastFret);
+    const activeString = Math.min(activeCell.string, strings.length - 1);
 
     useEffect(() => () => clearTimeout(statusTimer.current), []);
 
@@ -136,7 +159,7 @@ const Fretboard = () => {
         } else if (KEY_MOVES[e.key]) {
             e.preventDefault();
             const [nextString, nextFret] = KEY_MOVES[e.key](string, offset, lastFret);
-            focusFret(clamp(nextString, 0, STRINGS.length - 1), clamp(nextFret, 0, lastFret));
+            focusFret(clamp(nextString, 0, strings.length - 1), clamp(nextFret, 0, lastFret));
         }
     };
 
@@ -155,14 +178,14 @@ const Fretboard = () => {
     };
 
     const renderStrings = () => {
-        return STRINGS.map((string, idx) => (
+        return strings.map((string, idx) => (
             <GuitarString
                 key={idx}
                 name={string}
                 index={idx}
                 noOfFrets={lastFret}
                 isSelected={(fret) => selectedFrets.has(fretKey(idx, fret))}
-                isFocusable={(fret) => idx === activeCell.string && fret === activeFret}
+                isFocusable={(fret) => idx === activeString && fret === activeFret}
                 onToggleFret={(fret) => toggleFret(fretKey(idx, fret))}
                 showNoteNames={showNoteNames}
                 showNoteLabels={showNoteLabels}
@@ -181,7 +204,7 @@ const Fretboard = () => {
                     x={fretX(i)}
                     y={BORDER}
                     width={FRET_WIRE_WIDTH}
-                    height={STRINGS.length * STRING_SPACING}
+                    height={strings.length * STRING_SPACING}
                     fill="#323232"
                     fillOpacity={0.5}
                 />
@@ -202,9 +225,10 @@ const Fretboard = () => {
                 fill="#dccaa6"
             />
         );
+        const lines = inlayLines(strings.length);
         return [
-            ...SINGLE_INLAYS.filter((fret) => fret <= lastFret).map((fret) => dot(fret, 3)),
-            ...DOUBLE_INLAYS.filter((fret) => fret <= lastFret).flatMap((fret) => [dot(fret, 2), dot(fret, 4)]),
+            ...SINGLE_INLAYS.filter((fret) => fret <= lastFret).map((fret) => dot(fret, lines.single)),
+            ...DOUBLE_INLAYS.filter((fret) => fret <= lastFret).flatMap((fret) => lines.double.map((line) => dot(fret, line))),
         ];
     };
 
@@ -233,7 +257,7 @@ const Fretboard = () => {
         <rect
             className="focus-ring"
             x={fretX(activeFret) + 1.5}
-            y={BORDER + activeCell.string * STRING_SPACING + 1.5}
+            y={BORDER + activeString * STRING_SPACING + 1.5}
             width={fretWidth(activeFret) - 3}
             height={STRING_SPACING - 3}
             rx={3}
@@ -291,6 +315,31 @@ const Fretboard = () => {
         setLastFretDraft(null);
     };
 
+    // Marks belong to a string position counted from the top, so a 6-string
+    // shape stays put on a 7- or 8-string, where the extra strings are added
+    // underneath. Marks on strings the new instrument doesn't have are hidden,
+    // not dropped, and come back on switching back, like frets past the last.
+    const handleInstrumentChange = (e) => {
+        setInstrumentId(e.target.value);
+    };
+
+    const setTuning = (notes) => {
+        setTunings((prev) => ({ ...prev, [instrumentId]: notes }));
+    };
+
+    const handleTuningPresetChange = (e) => {
+        const preset = getInstrument(instrumentId).tunings.find((t) => t.name === e.target.value);
+        if (preset) {
+            setTuning(preset.notes);
+        }
+    };
+
+    // Strings in the tuning row are listed low to high; `lowIndex` counts from
+    // the lowest string.
+    const handleStringTuningChange = (lowIndex, note) => {
+        setTuning(tuning.map((current, i) => (i === lowIndex ? note : current)));
+    };
+
     const handleClear = () => {
         const previous = selectedFrets;
         if (previous.size === 0) {
@@ -308,6 +357,46 @@ const Fretboard = () => {
     return (
         <div className="block">
             <div className="control-panel">
+                <div className="control-group" role="group" aria-label="Instrument and tuning">
+                    <div className="select-group">
+                        <label htmlFor="instrument">Instrument</label>
+                        <select id="instrument" value={instrumentId} onChange={handleInstrumentChange}>
+                            {INSTRUMENTS.map((instrument) => (
+                                <option key={instrument.id} value={instrument.id}>{instrument.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="select-group">
+                        <label htmlFor="tuning">Tuning</label>
+                        <select
+                            id="tuning"
+                            value={tuningPreset?.name ?? CUSTOM_TUNING}
+                            onChange={handleTuningPresetChange}
+                        >
+                            {getInstrument(instrumentId).tunings.map((preset) => (
+                                <option key={preset.name} value={preset.name}>{preset.name}</option>
+                            ))}
+                            {!tuningPreset && <option value={CUSTOM_TUNING}>Custom</option>}
+                        </select>
+                    </div>
+                    <div className="tuning-strings" role="group" aria-label="String tuning, lowest string first">
+                        {tuning.map((note, lowIndex) => {
+                            const stringNumber = tuning.length - lowIndex;
+                            return (
+                                <select
+                                    key={`${instrumentId}:${lowIndex}`}
+                                    aria-label={`String ${stringNumber} tuning`}
+                                    value={note}
+                                    onChange={(e) => handleStringTuningChange(lowIndex, e.target.value)}
+                                >
+                                    {TUNING_NOTES.map((name) => (
+                                        <option key={name} value={name}>{name}</option>
+                                    ))}
+                                </select>
+                            );
+                        })}
+                    </div>
+                </div>
                 <div className="control-group" role="group" aria-label="Export">
                     <button className="button" onClick={handleCopyToClipboard}>
                         Copy image
