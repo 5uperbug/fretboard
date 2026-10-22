@@ -14,7 +14,6 @@ import {
     fretX,
 } from "./geometry";
 
-import Switch from "../components/switch";
 import './_index.scss';
 
 const fretKey = (stringIndex, fret) => `${stringIndex}:${fret}`;
@@ -83,17 +82,31 @@ const useScrollEdges = (ref, contentWidth) => {
     return edges;
 };
 
+// A button that stays pressed while its setting is on.
+const ToggleChip = ({ label, pressed, onChange }) => (
+    <button className="chip" aria-pressed={pressed} onClick={() => onChange(!pressed)}>
+        {pressed && (
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24">
+                <path d="M5 12l5 5 9-10" />
+            </svg>
+        )}
+        {label}
+    </button>
+);
+
 const Fretboard = () => {
     const [showNoteNames, setShowNoteNames] = useState(true);
     const [showNoteLabels, setShowNoteLabels] = useState(false);
     // Marked frets as "string:fret" keys. Kept here rather than in each Fret so
     // marks survive the fret range shrinking and can be cleared in one update.
     const [selectedFrets, setSelectedFrets] = useState(() => new Set());
-    const [lastFret, setLastFret] = useState(15);
+    const [lastFret, setLastFret] = useState(12);
     const [instrumentId, setInstrumentId] = useState(DEFAULT_INSTRUMENT);
     // Each instrument's tuning, low string first, so a custom tuning is still
     // there after trying another instrument.
     const [tunings, setTunings] = useState({});
+    // Whether the instrument and tuning pickers are open under their summary.
+    const [tuningOpen, setTuningOpen] = useState(false);
     // What is typed in the Last fret box while it has focus. Numbers in range
     // apply straight away; anything else is clamped or undone on blur.
     const [lastFretDraft, setLastFretDraft] = useState(null);
@@ -105,6 +118,7 @@ const Fretboard = () => {
     const statusTimer = useRef();
     const fretboardSvg = useRef();
     const fretboardContainer = useRef();
+    const tuningSummary = useRef();
 
     const tuning = tunings[instrumentId] ?? standardTuning(instrumentId);
     // Top to bottom as drawn: highest string first, like string numbers.
@@ -340,6 +354,11 @@ const Fretboard = () => {
         setTuning(tuning.map((current, i) => (i === lowIndex ? note : current)));
     };
 
+    const closeTuning = () => {
+        setTuningOpen(false);
+        tuningSummary.current.focus();
+    };
+
     const handleClear = () => {
         const previous = selectedFrets;
         if (previous.size === 0) {
@@ -357,7 +376,26 @@ const Fretboard = () => {
     return (
         <div className="block">
             <div className="control-panel">
-                <div className="control-group" role="group" aria-label="Instrument and tuning">
+                <button
+                    ref={tuningSummary}
+                    className="button tuning-summary"
+                    aria-expanded={tuningOpen}
+                    aria-controls="tuning-editor"
+                    onClick={() => setTuningOpen((open) => !open)}
+                >
+                    <span>{getInstrument(instrumentId).name} · {tuningPreset?.name ?? "Custom"}</span>
+                    <span className="tuning-summary-notes">{tuning.join(" ")}</span>
+                    <svg className="chevron" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24">
+                        <path d="M6 9l6 6 6-6" />
+                    </svg>
+                </button>
+                <div
+                    id="tuning-editor"
+                    className="tuning-editor"
+                    role="group"
+                    aria-label="Instrument and tuning"
+                    hidden={!tuningOpen}
+                >
                     <div className="select-group">
                         <label htmlFor="instrument">Instrument</label>
                         <select id="instrument" value={instrumentId} onChange={handleInstrumentChange}>
@@ -379,35 +417,33 @@ const Fretboard = () => {
                             {!tuningPreset && <option value={CUSTOM_TUNING}>Custom</option>}
                         </select>
                     </div>
-                    <div className="tuning-strings" role="group" aria-label="String tuning, lowest string first">
-                        {tuning.map((note, lowIndex) => {
-                            const stringNumber = tuning.length - lowIndex;
-                            return (
-                                <select
-                                    key={`${instrumentId}:${lowIndex}`}
-                                    aria-label={`String ${stringNumber} tuning`}
-                                    value={note}
-                                    onChange={(e) => handleStringTuningChange(lowIndex, e.target.value)}
-                                >
-                                    {TUNING_NOTES.map((name) => (
-                                        <option key={name} value={name}>{name}</option>
-                                    ))}
-                                </select>
-                            );
-                        })}
+                    <div className="select-group tuning-strings-group">
+                        <span id="tuning-strings-label">Strings, low to high</span>
+                        <div className="tuning-strings" role="group" aria-labelledby="tuning-strings-label">
+                            {tuning.map((note, lowIndex) => {
+                                const stringNumber = tuning.length - lowIndex;
+                                return (
+                                    <select
+                                        key={`${instrumentId}:${lowIndex}`}
+                                        aria-label={`String ${stringNumber} tuning`}
+                                        value={note}
+                                        onChange={(e) => handleStringTuningChange(lowIndex, e.target.value)}
+                                    >
+                                        {TUNING_NOTES.map((name) => (
+                                            <option key={name} value={name}>{name}</option>
+                                        ))}
+                                    </select>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
-                <div className="control-group" role="group" aria-label="Export">
-                    <button className="button" onClick={handleCopyToClipboard}>
-                        Copy image
-                    </button>
-                    <button className="button" onClick={handleDownload}>
-                        Download PNG
+                    <button className="button tuning-done" onClick={closeTuning}>
+                        Done
                     </button>
                 </div>
-                <div className="control-group" role="group" aria-label="Display">
-                    <Switch label="Names on marks" checked={showNoteNames} onChange={setShowNoteNames} />
-                    <Switch label="Show all notes" checked={showNoteLabels} onChange={setShowNoteLabels} />
+                <div className="display-controls" role="group" aria-label="Display">
+                    <ToggleChip label="Names on marks" pressed={showNoteNames} onChange={setShowNoteNames} />
+                    <ToggleChip label="All notes" pressed={showNoteLabels} onChange={setShowNoteLabels} />
                     <div className="number-group">
                         <label htmlFor="last-fret">Last fret</label>
                         <input
@@ -423,11 +459,6 @@ const Fretboard = () => {
                             onKeyDown={(e) => e.key === "Enter" && commitLastFret()}
                         />
                     </div>
-                </div>
-                <div className="control-group control-group-end">
-                    <button className="button button-danger" onClick={handleClear}>
-                        Clear marks
-                    </button>
                 </div>
             </div>
             <div className={`status ${status?.error ? 'status-error' : ''}`} role="status">
@@ -496,6 +527,17 @@ const Fretboard = () => {
                     </g>
                     {showFocusRing && renderFocusRing()}
                 </svg>
+            </div>
+            <div className="board-actions" role="group" aria-label="Board actions">
+                <button className="button button-danger" onClick={handleClear}>
+                    Clear marks
+                </button>
+                <button className="button board-actions-export" onClick={handleCopyToClipboard}>
+                    Copy image
+                </button>
+                <button className="button" onClick={handleDownload}>
+                    Download PNG
+                </button>
             </div>
         </div>
     );

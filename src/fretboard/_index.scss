@@ -4,33 +4,106 @@
     padding: 5px;
     border: 1px solid var(--panel-border);
 
+    // One compact bar: the tuning summary on the left, display settings on the right.
     .control-panel {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 8px 20px;
+        gap: 8px 16px;
         padding: 4px 2px 8px;
     }
 
-    .control-group {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px 12px;
+    .tuning-summary {
+        gap: 10px;
 
-        // Keep the destructive action apart from the others.
-        &-end {
-            margin-left: auto;
+        &-notes {
+            font-family: 'Ubuntu Mono', monospace;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+        }
+
+        .chevron {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.15s ease;
+        }
+
+        &[aria-expanded="true"] .chevron {
+            transform: rotate(180deg);
         }
     }
 
-    .switch-group {
+    .display-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+
+        .number-group {
+            margin-left: 8px;
+        }
+    }
+
+    .chip {
         display: inline-flex;
         align-items: center;
+        gap: 6px;
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid var(--control-border);
+        border-radius: 999px;
+        background-color: transparent;
+        color: var(--text);
         cursor: pointer;
+        transition: background-color 0.15s ease;
+
+        &:hover {
+            background-color: var(--control-hover);
+        }
+
+        &[aria-pressed="true"] {
+            border-color: var(--text);
+            background-color: var(--text);
+            color: var(--bg);
+        }
+
+        svg {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
 
         @media (pointer: coarse) {
             min-height: 44px;
+        }
+    }
+
+    // Opens as its own row under the bar on wide screens, straight under
+    // the summary on narrow ones.
+    .tuning-editor {
+        display: flex;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        align-items: center;
+        order: 1;
+        gap: 10px 20px;
+        box-sizing: border-box;
+        padding: 12px;
+        border-radius: 8px;
+        background-color: var(--surface);
+
+        &[hidden] {
+            display: none;
+        }
+
+        .tuning-done {
+            margin-left: auto;
         }
     }
 
@@ -82,6 +155,102 @@
             @media (pointer: coarse) {
                 min-height: 44px;
                 font-size: 16px; // stops iOS zooming in on focus
+            }
+        }
+    }
+
+    // Actions on the finished sketch sit under it, the destructive one apart.
+    .board-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+        padding: 10px 2px 4px;
+        border-top: 1px solid var(--header-border);
+
+        &-export {
+            margin-left: auto;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .tuning-summary {
+            flex: 1 1 100%;
+            justify-content: flex-start;
+            min-height: 44px;
+            text-align: left;
+
+            .chevron {
+                margin-left: auto;
+            }
+        }
+
+        .display-controls {
+            margin-left: 0;
+
+            .number-group {
+                margin-left: 0;
+            }
+        }
+
+        // Instrument and tuning side by side, labels above, strings underneath.
+        .tuning-editor {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            order: 0;
+            gap: 10px 8px;
+            padding: 10px;
+
+            .select-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+                font-size: 13px;
+                color: var(--text-muted);
+            }
+
+            select {
+                min-width: 0;
+                color: var(--text);
+            }
+
+            .tuning-strings-group,
+            .tuning-done {
+                grid-column: 1 / -1;
+            }
+
+            .tuning-strings {
+                display: grid;
+                grid-template-columns: repeat(6, minmax(0, 1fr));
+                gap: 6px;
+
+                select {
+                    width: auto;
+                }
+            }
+
+            .tuning-done {
+                margin-left: 0;
+            }
+        }
+
+        // Pinned to the bottom of the screen while the board scrolls past.
+        .board-actions {
+            position: sticky;
+            bottom: 0;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            padding: 10px 0 12px;
+            background-color: var(--bg);
+
+            .button {
+                padding: 0 6px;
+            }
+
+            &-export {
+                margin-left: 0;
             }
         }
     }
